@@ -14,7 +14,7 @@ const handleLogin = async () => {
   // Mock login delay
   setTimeout(() => {
     isLoading.value = false
-    alert(`Logged in successfully!\nEmail: ${email.value}`)
+    alert(`Berhasil masuk!\nEmail: ${email.value}`)
   }, 1000)
 }
 </script>
@@ -24,10 +24,10 @@ const handleLogin = async () => {
     <!-- Header -->
     <header class="mb-8">
       <h1 class="text-3xl font-bold tracking-tight text-[#1A1A1A]">
-        Welcome Back
+        Selamat Datang Kembali
       </h1>
       <p class="text-sm text-gray-500 mt-1">
-        Login to your account now
+        Masuk ke akun Anda sekarang
       </p>
     </header>
 
@@ -39,7 +39,7 @@ const handleLogin = async () => {
         v-model="email"
         type="email"
         label="Email"
-        placeholder="Input your email"
+        placeholder="Masukkan email Anda"
         required
         autocomplete="email"
       />
@@ -50,7 +50,7 @@ const handleLogin = async () => {
         v-model="password"
         type="password"
         label="Password"
-        placeholder="Input your password"
+        placeholder="Masukkan password Anda"
         required
         autocomplete="current-password"
       />
@@ -58,7 +58,7 @@ const handleLogin = async () => {
       <!-- Submit Button -->
       <div class="pt-2">
         <UiAuthButton :loading="isLoading">
-          Login
+          Masuk
         </UiAuthButton>
       </div>
     </form>
@@ -69,15 +69,15 @@ const handleLogin = async () => {
         <div class="w-full border-t border-[#EAEAEA]"></div>
       </div>
       <span class="relative px-4 bg-white text-xs font-medium text-gray-400 uppercase tracking-wider">
-        Or continue with
+        Atau lanjutkan dengan
       </span>
     </div>
 
     <!-- Navigation / Footer Toggle -->
     <div class="text-center mt-6 text-sm text-gray-500">
-      Don't have an account? 
+      Belum memiliki akun? 
       <NuxtLink to="/register" class="font-bold text-[#1A1A1A] hover:text-[#7A4D30] transition-colors duration-150">
-        Sign up here
+        Daftar di sini
       </NuxtLink>
     </div>
   </div>
