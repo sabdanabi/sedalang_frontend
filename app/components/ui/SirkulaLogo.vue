@@ -1,21 +1,20 @@
 <template>
   <div class="flex items-center gap-3">
-    <!-- Sirkula Custom Brown Icon -->
+    <!-- SeDaLang Custom Brown Icon (Split lid and pot container) -->
     <svg 
       viewBox="0 0 100 100" 
       class="w-8 h-8 text-[#7A4D30] fill-current" 
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      <!-- Stylable brown organic house/compost container shape -->
-      <path d="M50 15 L85 45 C88 47.5 88 51.5 85 54 L75 78 C73 83 68 85 62 85 L38 85 C32 85 27 83 25 78 L15 54 C12 51.5 12 47.5 15 45 Z" />
-      <!-- Lighter internal negative space representing organic seed/loop -->
-      <path d="M50 35 C42 45 42 55 50 65 C58 55 58 45 50 35 Z" fill="#F2F2F2" />
-      <circle cx="50" cy="50" r="4" fill="#7A4D30" />
+      <!-- Rounded trapezoid cap (top lid) -->
+      <path d="M 24,45 C 24,45 30,32 34,28 C 38,24 44,22 50,22 C 56,22 62,24 66,28 C 70,32 76,45 76,45 C 77,47 75,48 73,48 L 27,48 C 25,48 23,47 24,45 Z" />
+      <!-- Rounded trapezoid body (bottom pot) -->
+      <path d="M 25,54 L 29,63 C 33,72 40,78 50,78 C 60,78 67,72 71,63 L 75,54 C 76,52 74,51 72,51 L 28,51 C 26,51 24,52 25,54 Z" />
     </svg>
     
     <span class="text-xl font-bold tracking-tight text-[#1A1A1A]">
-      SEDALANG
+      SeDaLang
     </span>
   </div>
 </template>

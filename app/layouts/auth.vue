@@ -2,9 +2,9 @@
   <div class="min-h-screen w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 bg-white">
     <!-- Left Column: Sirkula Branding & Compost Cycle Illustration (Hidden on Mobile) -->
     <section 
-      class="hidden md:flex lg:col-span-6 flex-col justify-between p-10 lg:p-14 bg-[#F2F2F2] border-r border-[#E0E0E0] select-none m-6"
-    >
+      class="hidden md:flex lg:col-span-6 flex-col justify-between p-10 lg:p-14 bg-[#F2F2F2] border-r border-[#E0E0E0] select-none m-6">
       <!-- Top Branding -->
+      
       <div>
         <UiSirkulaLogo />
       </div>
@@ -33,5 +33,6 @@
         <slot />
       </div>
     </main>
+    
   </div>
 </template>
