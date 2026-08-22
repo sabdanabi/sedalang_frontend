@@ -21,7 +21,7 @@
       <!-- Bottom Slogan -->
       <div class="text-center mx-auto max-w-[280px] lg:max-w-[320px]">
         <p class="text-sm lg:text-base font-semibold leading-relaxed text-[#7A4D30]/80">
-          Make sure you have an account before exploring the tourist destination you want
+            Pastikan Anda sudah memiliki akun sebelum menjelajahi destinasi wisata yang Anda inginkan
         </p>
       </div>
     </section>
