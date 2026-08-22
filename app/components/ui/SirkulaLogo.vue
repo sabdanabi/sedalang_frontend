@@ -15,7 +15,7 @@
     </svg>
     
     <span class="text-xl font-bold tracking-tight text-[#1A1A1A]">
-      Sirkula
+      SEDALANG
     </span>
   </div>
 </template>
