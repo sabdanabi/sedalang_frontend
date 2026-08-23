@@ -1,1 +1,94 @@
-@import 'tailwindcss';
+@import "tailwindcss";
+@import "maplibre-gl/dist/maplibre-gl.css";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-poppins: "Poppins", sans-serif;
+  --font-inter: "Inter", sans-serif;
+
+  /* Custom font sizes from Poppins guideline */
+  --text-poppins-74: 74px;
+  --text-poppins-40: 40px;
+  --text-poppins-32: 32px;
+  --text-poppins-24: 24px;
+  --text-poppins-20: 20px;
+  --text-poppins-18: 18px;
+  --text-poppins-16: 16px;
+  --text-poppins-14: 14px;
+
+  /* Custom font sizes from Inter guideline */
+  --text-inter-32: 32px;
+  --text-inter-24: 24px;
+  --text-inter-20: 20px;
+  --text-inter-16: 16px;
+  --text-inter-14: 14px;
+}
+
+/* Poppins Typography Classes */
+.text-poppins-h1 {
+  font-family: var(--font-poppins);
+  font-size: var(--text-poppins-74);
+  font-weight: 700;
+}
+.text-poppins-h2 {
+  font-family: var(--font-poppins);
+  font-size: var(--text-poppins-40);
+  font-weight: 700;
+}
+.text-poppins-h3 {
+  font-family: var(--font-poppins);
+  font-size: var(--text-poppins-32);
+  font-weight: 600;
+}
+.text-poppins-h4 {
+  font-family: var(--font-poppins);
+  font-size: var(--text-poppins-24);
+  font-weight: 500;
+}
+.text-poppins-h5 {
+  font-family: var(--font-poppins);
+  font-size: var(--text-poppins-20);
+  font-weight: 500;
+}
+.text-poppins-h6 {
+  font-family: var(--font-poppins);
+  font-size: var(--text-poppins-18);
+  font-weight: 500;
+}
+.text-poppins-h9 {
+  font-family: var(--font-poppins);
+  font-size: var(--text-poppins-16);
+  font-weight: 400;
+}
+.text-poppins-h10 {
+  font-family: var(--font-poppins);
+  font-size: var(--text-poppins-14);
+  font-weight: 400;
+}
+
+/* Inter Typography Classes */
+.text-inter-h1 {
+  font-family: var(--font-inter);
+  font-size: var(--text-inter-32);
+  font-weight: 600;
+}
+.text-inter-h2 {
+  font-family: var(--font-inter);
+  font-size: var(--text-inter-24);
+  font-weight: 500;
+}
+.text-inter-h3 {
+  font-family: var(--font-inter);
+  font-size: var(--text-inter-20);
+  font-weight: 400;
+}
+.text-inter-h4 {
+  font-family: var(--font-inter);
+  font-size: var(--text-inter-16);
+  font-weight: 400;
+}
+.text-inter-h5 {
+  font-family: var(--font-inter);
+  font-size: var(--text-inter-14);
+  font-weight: 400;
+}

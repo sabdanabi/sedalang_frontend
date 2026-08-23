@@ -16,7 +16,7 @@ withDefaults(defineProps<Props>(), {
   <button
     :type="type"
     :disabled="disabled || loading"
-    class="w-full h-14 bg-[#7A4D30] hover:bg-[#6A3F25] active:scale-[0.98] disabled:bg-gray-400 disabled:scale-100 disabled:cursor-not-allowed text-white font-semibold text-base rounded-full shadow-sm hover:shadow transition-all duration-200 flex items-center justify-center gap-2"
+    class="w-full h-14 bg-[#7A4D30] hover:bg-[#6A3F25] active:scale-[0.98] disabled:bg-gray-400 disabled:scale-100 disabled:cursor-not-allowed text-white font-semibold text-base rounded-full shadow-sm hover:shadow transition-all duration-200 flex items-center justify-center gap-2 font-inter"
   >
     <!-- Loading Spinner -->
     <svg 

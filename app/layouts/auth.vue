@@ -2,9 +2,9 @@
   <div class="min-h-screen w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 bg-white">
     <!-- Left Column: Sirkula Branding & Compost Cycle Illustration (Hidden on Mobile) -->
     <section 
-      class="hidden md:flex lg:col-span-6 flex-col justify-between p-10 lg:p-14 bg-[#F2F2F2] border-r border-[#E0E0E0] select-none m-6"
-    >
+      class="hidden md:flex lg:col-span-6 flex-col justify-between p-10 lg:p-14 bg-[#F2F2F2] border-r border-[#E0E0E0] select-none m-6">
       <!-- Top Branding -->
+      
       <div>
         <UiSirkulaLogo />
       </div>
@@ -19,8 +19,8 @@
       </div>
 
       <!-- Bottom Slogan -->
-      <div class="text-center mx-auto max-w-[280px] lg:max-w-[320px]">
-        <p class="text-sm lg:text-base font-semibold leading-relaxed text-[#7A4D30]/80">
+      <div class="text-center mx-auto max-w-[280px] lg:max-w-[420px] font-inter">
+        <p class="text-sm lg:text-base font-semibold leading-relaxed text-[#292929]/80 font-inter">
             Pastikan Anda sudah memiliki akun sebelum menjelajahi destinasi wisata yang Anda inginkan
         </p>
       </div>
@@ -33,5 +33,6 @@
         <slot />
       </div>
     </main>
+    
   </div>
 </template>
