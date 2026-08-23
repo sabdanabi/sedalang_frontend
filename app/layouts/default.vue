@@ -7,5 +7,8 @@
     <main class="flex-grow">
       <slot />
     </main>
+
+    <!-- Footer Component -->
+    <LayoutsFooter />
   </div>
 </template>

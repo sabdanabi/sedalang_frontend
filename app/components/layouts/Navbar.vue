@@ -17,7 +17,7 @@ const toggleMobileMenu = () => {
 
 <template>
   <header class="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 select-none">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+    <div class="max-w-8xl mx-auto px-6 lg:px-8">
       <div class="flex items-center justify-between h-20">
         
         <!-- Left: Logo -->

@@ -105,6 +105,15 @@ const selectTag = (tagName: string) => {
 
     <!-- Ways of Working Section -->
     <FeaturesLandingWaysOfWorkingSection />
+
+    <!-- Maps Section -->
+    <FeaturesLandingMapsSection />
+
+    <!-- QnA Section -->
+    <FeaturesLandingQnaSection />
+
+    <!-- Testimonials Section -->
+    <FeaturesLandingTestimonialsSection />
     
   </div>
 </template>
