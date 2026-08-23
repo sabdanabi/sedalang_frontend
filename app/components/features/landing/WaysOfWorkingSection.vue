@@ -29,25 +29,25 @@ const steps = [
 
 <template>
   <section class="w-full bg-white py-20 md:py-28 select-none relative overflow-hidden">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col items-center relative z-10">
+    <div class="max-w-8xl mx-auto px-10 lg:px-11 flex flex-col items-center relative z-10">
       
       <!-- Top Pill Tag -->
-      <div class="border border-gray-900 rounded-full px-5 py-1.5 text-xs font-semibold tracking-wider text-gray-800 uppercase inline-block mb-6 select-none bg-white shadow-sm">
+      <div class="border border-gray-900 rounded-full px-5 py-2.5 text-xs font-semibold tracking-wider text-gray-800 uppercase inline-block mb-6 select-none bg-white shadow-sm font-inter">
         ways of working
       </div>
 
       <!-- Main Headline -->
-      <h2 class="text-3xl md:text-4xl font-bold text-gray-950 text-center mb-4 tracking-tight leading-tight">
+      <h2 class="font-poppins text-4xl md:text-5xl font-medium text-gray-950 text-center mb-4 tracking-tight leading-tight">
         Turn Used Items into More Valuable.
       </h2>
 
       <!-- Subtitle -->
-      <p class="text-sm md:text-base text-gray-400 text-center max-w-2xl mb-16 leading-relaxed">
+      <p class="font-inter text-base md:text-lg text-gray-400 text-center max-w-4xl mb-16 leading-relaxed">
         Follow these simple steps to easily and sustainably transform used items into valuable creations.
       </p>
 
       <!-- Steps Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
         <div 
           v-for="step in steps" 
           :key="step.title"
@@ -63,12 +63,12 @@ const steps = [
           </div>
 
           <!-- Step Title -->
-          <h3 class="text-[#7A4D30] font-bold text-lg lg:text-xl text-center mb-4 transition-colors duration-200 group-hover:text-[#6A3F25]">
+          <h3 class="text-[#7A4D30] font-poppins font-bold text-lg lg:text-xl text-center mb-4 transition-colors duration-200 group-hover:text-[#6A3F25]">
             {{ step.title }}
           </h3>
 
           <!-- Step Description -->
-          <p class="text-sm lg:text-[15px] leading-relaxed text-gray-500 text-center">
+          <p class="font-inter text-sm lg:text-[15px] leading-relaxed text-gray-500 text-center">
             {{ step.description }}
           </p>
         </div>

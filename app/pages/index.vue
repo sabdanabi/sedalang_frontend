@@ -33,18 +33,18 @@ const selectTag = (tagName: string) => {
       <div class="max-w-7xl mx-auto px-6 lg:px-8 pt-16 pb-20 md:pt-28 md:pb-32 flex flex-col items-center text-center relative z-10">
         
         <!-- Subheading / Tagline -->
-        <span class="text-sm md:text-base font-semibold text-gray-500 tracking-wide uppercase mb-5 animate-fade-in">
+        <span class="text-sm md:text-base font-semibold text-gray-500 tracking-wide uppercase mb-5 animate-fade-in font-inter">
           Green Supply Chain & Sustainable Consumption Platforms
         </span>
 
         <!-- Main Heading -->
-        <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-[#1A1A1A] max-w-5xl leading-[1.15] mb-6">
+        <h1 class="font-poppins text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-[#1A1A1A] max-w-5xl leading-[1.40] mb-6">
           Recycling Becomes Valuable <br class="hidden sm:inline" />
           Together Local Artisans
         </h1>
 
         <!-- Description Paragraph -->
-        <p class="text-base sm:text-lg md:text-xl text-gray-500 max-w-2xl leading-relaxed mb-10">
+        <p class="font-inter text-base sm:text-lg md:text-xl text-gray-500 max-w-2xl leading-relaxed mb-10">
           Transform used household items into valuable products <br class="hidden md:inline" />
           with the help of AI and local MSME artisans in Semarang.
         </p>
@@ -58,18 +58,18 @@ const selectTag = (tagName: string) => {
             type="text" 
             v-model="searchQuery"
             placeholder="Looking for a craftsman"
-            class="flex-grow bg-transparent text-sm md:text-base text-gray-800 placeholder-gray-400 outline-none w-full"
+            class="flex-grow bg-transparent text-sm md:text-base text-gray-800 placeholder-gray-400 outline-none w-full font-inter"
           />
           <button 
             type="submit"
-            class="bg-[#7A4D30] hover:bg-[#6A3F25] text-white px-6 py-3 rounded-full text-sm md:text-base font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.98] shadow-sm"
+            class="bg-[#7A4D30] hover:bg-[#6A3F25] text-white px-6 py-3 rounded-full text-sm md:text-base font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.98] shadow-sm font-inter"
           >
             Tracking craftsman
           </button>
         </form>
 
         <!-- Bottom Highlights List -->
-        <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-3 text-sm md:text-base font-medium text-gray-800">
+        <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-3 text-sm md:text-base font-medium text-gray-800 font-inter">
           <button 
             @click="selectTag('AI Page')"
             class="hover:text-[#7A4D30] transition-colors duration-150 cursor-pointer focus:outline-none"

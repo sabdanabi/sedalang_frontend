@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-white text-gray-900 font-sans flex flex-col">
+  <div class="min-h-screen bg-white text-gray-900 font-inter flex flex-col">
     <!-- Navbar Component -->
     <LayoutsNavbar />
     

@@ -26,12 +26,12 @@ const toggleMobileMenu = () => {
         </NuxtLink>
 
         <!-- Center: Desktop Nav Links -->
-        <nav class="hidden md:flex items-center gap-8 lg:gap-10">
+        <nav class="hidden md:flex items-center gap-8 lg:gap-10 font-inter">
           <NuxtLink
             v-for="link in navLinks"
             :key="link.name"
             :to="link.path"
-            class="relative text-sm font-medium transition-colors duration-200 py-1"
+            class="relative text-sm font-medium transition-colors duration-200 py-1 font-inter"
             :class="[
               link.active 
                 ? 'text-[#7A4D30] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-full after:h-[2px] after:bg-[#7A4D30] after:rounded-full' 
@@ -43,16 +43,16 @@ const toggleMobileMenu = () => {
         </nav>
 
         <!-- Right: Desktop Auth Buttons -->
-        <div class="hidden md:flex items-center gap-4">
+        <div class="hidden md:flex items-center gap-4 font-inter">
           <NuxtLink
             to="/login"
-            class="px-6 py-2.5 border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 text-sm font-medium rounded-full transition-all duration-200"
+            class="px-6 py-2.5 border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 text-sm font-medium rounded-full transition-all duration-200 font-inter"
           >
             Login
           </NuxtLink>
           <NuxtLink
             to="/register"
-            class="px-6 py-2.5 bg-[#7A4D30] hover:bg-[#6A3F25] text-white text-sm font-medium rounded-full transition-all duration-200 shadow-sm hover:shadow active:scale-[0.98]"
+            class="px-6 py-2.5 bg-[#7A4D30] hover:bg-[#6A3F25] text-white text-sm font-medium rounded-full transition-all duration-200 shadow-sm hover:shadow active:scale-[0.98] font-inter"
           >
             Sign up
           </NuxtLink>

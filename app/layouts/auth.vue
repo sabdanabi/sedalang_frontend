@@ -19,8 +19,8 @@
       </div>
 
       <!-- Bottom Slogan -->
-      <div class="text-center mx-auto max-w-[280px] lg:max-w-[320px]">
-        <p class="text-sm lg:text-base font-semibold leading-relaxed text-[#7A4D30]/80">
+      <div class="text-center mx-auto max-w-[280px] lg:max-w-[420px] font-inter">
+        <p class="text-sm lg:text-base font-semibold leading-relaxed text-[#292929]/80 font-inter">
             Pastikan Anda sudah memiliki akun sebelum menjelajahi destinasi wisata yang Anda inginkan
         </p>
       </div>

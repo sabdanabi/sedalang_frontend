@@ -23,7 +23,7 @@ const model = defineModel<string>({ default: '' })
   <div class="w-full">
     <label 
       :for="id" 
-      class="block text-sm font-semibold text-[#1A1A1A] mb-2 tracking-wide"
+      class="block text-sm font-semibold text-[#1A1A1A] mb-2 tracking-wide font-inter"
     >
       {{ label }}
     </label>
@@ -34,7 +34,7 @@ const model = defineModel<string>({ default: '' })
       :placeholder="placeholder"
       :required="required"
       :autocomplete="autocomplete"
-      class="w-full bg-[#F5F5F5] border border-[#E0E0E0] rounded-[14px] px-5 py-4 text-[#1A1A1A] placeholder-gray-400 text-sm md:text-base focus:border-[#7A4D30] focus:bg-white focus:outline-none transition-all duration-200 shadow-inner/5"
+      class="w-full bg-[#F5F5F5] border border-[#E0E0E0] rounded-[14px] px-5 py-4 text-[#1A1A1A] placeholder-gray-400 text-sm md:text-base focus:border-[#7A4D30] focus:bg-white focus:outline-none transition-all duration-200 shadow-inner/5 font-inter"
     />
   </div>
 </template>

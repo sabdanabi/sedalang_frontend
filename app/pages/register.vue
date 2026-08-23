@@ -25,10 +25,10 @@ const handleRegister = async () => {
   <div class="w-full">
     <!-- Header -->
     <header class="mb-8">
-      <h1 class="text-3xl font-bold tracking-tight text-[#1A1A1A]">
+      <h1 class="font-poppins text-3xl font-medium tracking-tight text-[#1A1A1A]">
         Mulai Sekarang
       </h1>
-      <p class="text-sm text-gray-500 mt-1">
+      <p class="font-inter text-sm text-gray-500 mt-1">
         Buat akun Anda sekarang
       </p>
     </header>
@@ -91,15 +91,15 @@ const handleRegister = async () => {
       <div class="absolute inset-0 flex items-center" aria-hidden="true">
         <div class="w-full border-t border-[#EAEAEA]"></div>
       </div>
-      <span class="relative px-4 bg-white text-xs font-medium text-gray-400 uppercase tracking-wider">
+      <span class="relative px-4 bg-white text-xs font-medium text-gray-400 uppercase tracking-wider font-inter">
         Atau lanjutkan dengan
       </span>
     </div>
 
     <!-- Navigation / Footer Toggle -->
-    <div class="text-center mt-6 text-sm text-gray-500">
+    <div class="text-center mt-6 text-sm text-gray-500 font-inter">
       Sudah memiliki akun? 
-      <NuxtLink to="/login" class="font-bold text-[#1A1A1A] hover:text-[#7A4D30] transition-colors duration-150">
+      <NuxtLink to="/login" class="font-bold text-[#1A1A1A] hover:text-[#7A4D30] transition-colors duration-150 font-inter">
         Masuk di sini
       </NuxtLink>
     </div>
