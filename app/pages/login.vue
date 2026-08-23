@@ -14,7 +14,7 @@ const handleLogin = async () => {
   // Mock login delay
   setTimeout(() => {
     isLoading.value = false
-    alert(`Berhasil masuk!\nEmail: ${email.value}`)
+    navigateTo('/onboarding')
   }, 1000)
 }
 </script>
