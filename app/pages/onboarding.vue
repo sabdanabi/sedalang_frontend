@@ -16,6 +16,20 @@ const profileForm = ref({
   photo: null as File | null
 })
 
+// Material tags for Pengrajin
+const materials = ref([
+  { name: 'Kain Perca', selected: true },
+  { name: 'Elektronik', selected: false },
+  { name: 'Plastik', selected: false },
+  { name: 'Kertas', selected: false },
+  { name: 'Kayu', selected: false },
+  { name: 'Kaca', selected: false }
+])
+
+const toggleMaterial = (index: number) => {
+  materials.value[index].selected = !materials.value[index].selected
+}
+
 // Mock file upload trigger
 const fileInput = ref<HTMLInputElement | null>(null)
 const triggerFileUpload = () => {
@@ -32,13 +46,7 @@ const handleFileChange = (e: Event) => {
 
 // Handlers
 const handleNextStep = () => {
-  if (selectedRole.value === 'pengguna') {
-    // If 'pengguna' is selected, skip profile setup and go directly to landing page
-    navigateTo('/')
-  } else {
-    // If 'pengrajin' is selected, proceed to Step 2 form
-    currentStep.value = 2
-  }
+  currentStep.value = 2
 }
 
 const handleConfirm = () => {
@@ -228,6 +236,27 @@ const goBack = () => {
               </div>
             </div>
 
+            <!-- Material yang diterima (Materials accepted list) -->
+            <div class="flex flex-col space-y-1.5 pt-2">
+              <label class="font-poppins text-xs font-bold text-gray-900">Material yang diterima</label>
+              <div class="flex flex-wrap gap-2.5">
+                <button
+                  v-for="(material, index) in materials"
+                  :key="material.name"
+                  @click="toggleMaterial(index)"
+                  type="button"
+                  class="px-4 py-2.5 rounded-full border text-xs font-semibold font-poppins transition-all duration-200 cursor-pointer focus:outline-none"
+                  :class="[
+                    material.selected
+                      ? 'border-[#7F5539] text-[#7F5539] bg-[#7F553912]'
+                      : 'border-gray-200 text-gray-700 hover:border-gray-300 bg-white'
+                  ]"
+                >
+                  {{ material.name }}
+                </button>
+              </div>
+            </div>
+
             <!-- Upload Photo Bar -->
             <div class="flex flex-col space-y-1.5 pt-2">
               <input 
@@ -269,19 +298,32 @@ const goBack = () => {
           Lanjut Sebagai {{ selectedRole === 'pengguna' ? 'Pengguna' : 'Pengrajin' }}
         </button>
 
-        <!-- Step 2 Button (Confirm) -->
-        <button 
-          v-else
-          @click="handleConfirm"
-          type="button"
-          class="w-full bg-[#7F5539] hover:bg-[#66432c] text-white font-poppins font-semibold py-4 rounded-[20px] transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-sm focus:outline-none"
-        >
-          <span>Konfirmasi</span>
-          <!-- Arrow Up Right Icon -->
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-          </svg>
-        </button>
+        <!-- Step 2 Buttons (Kembali & Simpan Data) -->
+        <div v-else class="grid grid-cols-2 gap-4">
+          <!-- Kembali Button -->
+          <button 
+            @click="goBack"
+            type="button"
+            class="w-full border border-[#7F5539] text-[#7F5539] bg-white hover:bg-[#7F553912] font-poppins font-semibold py-4 rounded-[20px] transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer focus:outline-none"
+          >
+            <span>Kembali</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+            </svg>
+          </button>
+
+          <!-- Simpan Data Button -->
+          <button 
+            @click="handleConfirm"
+            type="button"
+            class="w-full bg-[#7F5539] hover:bg-[#66432c] text-white font-poppins font-semibold py-4 rounded-[20px] transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-sm focus:outline-none"
+          >
+            <span>Simpan Data</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+            </svg>
+          </button>
+        </div>
 
       </div>
 
