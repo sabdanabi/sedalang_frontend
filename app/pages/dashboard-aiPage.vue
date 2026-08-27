@@ -193,6 +193,22 @@ const defaultProducts: Product[] = [
 
 const products = ref<Product[]>(defaultProducts)
 
+// AI prompt history state
+interface HistoryItem {
+  id: string
+  promptText: string
+  previewImage: string | null
+  detectedMaterial: string
+  products: Product[]
+}
+
+const history = ref<HistoryItem[]>([])
+
+const recallHistoryItem = (item: HistoryItem) => {
+  detectedMaterial.value = item.detectedMaterial
+  products.value = [...item.products]
+}
+
 // Simulated AI search / send prompt
 const handlePromptSubmit = (data: { promptText: string; selectedFile: File | null; previewImage: string | null }) => {
   isAnalyzing.value = true
@@ -229,6 +245,15 @@ const handlePromptSubmit = (data: { promptText: string; selectedFile: File | nul
         defaultProducts[2]
       ]
     }
+
+    // Capture in history
+    history.value.unshift({
+      id: Date.now().toString(),
+      promptText: data.promptText.trim() || (data.selectedFile ? `Foto: ${data.selectedFile.name}` : 'Tanya AI'),
+      previewImage: data.previewImage,
+      detectedMaterial: detectedMaterial.value,
+      products: [...products.value]
+    })
   }, 1200)
 }
 
@@ -266,6 +291,35 @@ const closeProductDetail = () => {
           :isAnalyzing="isAnalyzing"
           @submit="handlePromptSubmit"
         />
+      </section>
+
+      <!-- History Section -->
+      <section v-if="history.length > 0" class="mb-10 text-left">
+        <h3 class="font-poppins text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
+          Pencarian Terakhir
+        </h3>
+        <div class="flex flex-wrap gap-3">
+          <button
+            v-for="item in history"
+            :key="item.id"
+            @click="recallHistoryItem(item)"
+            class="flex items-center gap-2 px-4 py-2 rounded-[16px] border border-gray-200 bg-white hover:border-[#7A4D30] hover:bg-[#7A4D30]/5 text-gray-700 hover:text-[#7A4D30] transition-all duration-200 cursor-pointer shadow-sm text-xs font-semibold focus:outline-none"
+          >
+            <!-- Tiny Image Preview if uploaded -->
+            <img 
+              v-if="item.previewImage" 
+              :src="item.previewImage" 
+              alt="History Thumbnail" 
+              class="w-5 h-5 rounded-full object-cover border border-gray-150" 
+            />
+            <span class="max-w-[150px] truncate font-inter">
+              {{ item.promptText }}
+            </span>
+            <span class="text-[10px] text-gray-400 font-normal ml-0.5">
+              ({{ item.detectedMaterial }})
+            </span>
+          </button>
+        </div>
       </section>
 
       <!-- Analysis Results Header Section -->
