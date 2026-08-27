@@ -7,11 +7,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'submit', data: { title: string; description: string }): void
+  (e: 'submit', data: { title: string; description: string; status: string }): void
 }>()
 
 const progressTitle = ref('')
 const progressDesc = ref('')
+const progressStatus = ref('Pending')
 
 const handleFormSubmit = () => {
   if (!progressTitle.value.trim() || !progressDesc.value.trim()) {
@@ -21,12 +22,14 @@ const handleFormSubmit = () => {
 
   emit('submit', {
     title: progressTitle.value.trim(),
-    description: progressDesc.value.trim()
+    description: progressDesc.value.trim(),
+    status: progressStatus.value
   })
 
   // Clear inputs
   progressTitle.value = ''
   progressDesc.value = ''
+  progressStatus.value = 'Pending'
 }
 </script>
 
@@ -84,6 +87,21 @@ const handleFormSubmit = () => {
                 placeholder="Jelaskan detail progres pengerjaan saat ini..."
                 class="w-full bg-[#FAF8F5]/80 border border-gray-100 hover:border-gray-250 focus:border-[#7A4D30]/40 focus:bg-white rounded-2xl py-3 px-4 text-xs md:text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-inter resize-none"
               ></textarea>
+            </div>
+
+            <!-- Status Pesanan Dropdown -->
+            <div class="flex flex-col gap-1.5 text-left">
+              <label class="font-poppins text-xs font-bold text-gray-950">Status Pesanan</label>
+              <select
+                v-model="progressStatus"
+                class="w-full bg-[#FAF8F5]/80 border border-gray-100 hover:border-gray-250 focus:border-[#7A4D30]/40 focus:bg-white rounded-2xl py-3 px-4 text-xs md:text-sm text-gray-800 outline-none transition-all font-inter appearance-none cursor-pointer"
+                style="background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke-width=%222.5%22 stroke=%22%237A4D30%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19.5 8.25l-7.5 7.5-7.5-7.5%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1rem;"
+              >
+                <option value="Pending">Pending</option>
+                <option value="Paid">Paid</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Complete">Complete</option>
+              </select>
             </div>
 
             <!-- Submit Button (Solid brown, full-width) -->

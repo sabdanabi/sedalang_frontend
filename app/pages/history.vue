@@ -5,13 +5,22 @@ definePageMeta({
   layout: 'dashboard'
 })
 
-// Validate onboarding complete status
+// Validate onboarding complete status and load dynamic order statuses
 onMounted(() => {
   if (import.meta.client) {
     const completed = localStorage.getItem('sedalang_onboarding_completed')
     if (!completed) {
       navigateTo('/onboarding')
+      return
     }
+
+    orders.value = orders.value.map(order => {
+      const savedStatus = localStorage.getItem(`sedalang_order_status_${order.id}`)
+      if (savedStatus) {
+        return { ...order, status: savedStatus }
+      }
+      return order
+    })
   }
 })
 

@@ -109,8 +109,13 @@ const billing = ref({
 const showAddModal = ref(false)
 const showGalleryModal = ref(false)
 
-const handleAddProgress = (formData: { title: string; description: string }) => {
+const handleAddProgress = (formData: { title: string; description: string; status: string }) => {
   showAddModal.value = false
+
+  // Save order status
+  if (import.meta.client) {
+    localStorage.setItem(`sedalang_order_status_${orderId}`, formData.status)
+  }
 
   // Find index of currently 'in_progress' step
   const inProgressIndex = steps.value.findIndex(s => s.status === 'in_progress')

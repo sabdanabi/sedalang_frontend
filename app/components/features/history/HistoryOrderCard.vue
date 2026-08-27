@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 interface Order {
   id: string
   date: string
@@ -14,7 +16,7 @@ interface Order {
   image: string
 }
 
-defineProps<{
+const props = defineProps<{
   order: Order
 }>()
 
@@ -22,6 +24,31 @@ defineEmits<{
   (e: 'select-detail', order: Order): void
   (e: 'reorder', order: Order): void
 }>()
+
+const statusConfig = computed(() => {
+  const statusStr = (props.order.status || '').toLowerCase()
+  if (statusStr.includes('complete') || statusStr.includes('selesai')) {
+    return {
+      bg: 'bg-[#EAF8F2] text-[#0F9F68]',
+      showCheck: true
+    }
+  } else if (statusStr.includes('progress') || statusStr.includes('in progress') || statusStr.includes('inprogres')) {
+    return {
+      bg: 'bg-[#FEF9C3] text-[#A16207]',
+      showCheck: false
+    }
+  } else if (statusStr.includes('paid')) {
+    return {
+      bg: 'bg-[#EFF6FF] text-[#1D4ED8]',
+      showCheck: false
+    }
+  } else {
+    return {
+      bg: 'bg-[#F3F4F6] text-[#4B5563]',
+      showCheck: false
+    }
+  }
+})
 </script>
 
 <template>
@@ -38,10 +65,21 @@ defineEmits<{
         </p>
       </div>
 
-      <!-- Selesai Badge with checkmark icon -->
-      <div class="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#EAF8F2] text-[#0F9F68] text-xs font-bold font-inter select-none">
+      <!-- Status Badge -->
+      <div 
+        class="flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold font-inter select-none"
+        :class="statusConfig.bg"
+      >
         <!-- SVG checkmark -->
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+        <svg 
+          v-if="statusConfig.showCheck"
+          xmlns="http://www.w3.org/2000/svg" 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke-width="2.5" 
+          stroke="currentColor" 
+          class="w-3.5 h-3.5"
+        >
           <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
         </svg>
         {{ order.status }}
