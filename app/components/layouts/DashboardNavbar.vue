@@ -82,8 +82,8 @@ const route = useRoute()
         </NuxtLink>
       </div>
 
-      <!-- Right: User profile photo & info -->
-      <div class="flex items-center gap-3">
+      <!-- Right: User profile photo & info (Cari/Edit profile-pengrajin) -->
+      <NuxtLink to="/profile-pengrajin" class="flex items-center gap-3 hover:opacity-90 focus:outline-none select-none">
         <img
           src="/images/landing_page_images/default_pp.webp"
           alt="Bruno James avatar"
@@ -93,7 +93,7 @@ const route = useRoute()
           <span class="text-sm font-semibold text-gray-900 leading-none">Bruno James</span>
           <span class="text-[11px] text-gray-400 mt-1 font-medium leading-none">Creative design</span>
         </div>
-      </div>
+      </NuxtLink>
 
     </div>
   </header>
