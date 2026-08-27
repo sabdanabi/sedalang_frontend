@@ -11,7 +11,7 @@
       <div class="flex items-center gap-3">
         <!-- Home Button -->
         <NuxtLink
-          to="/dashboard"
+          to="/dashboard-aiPage"
           class="p-2.5 rounded-[12px] border border-gray-200/80 text-gray-700 hover:bg-gray-50 hover:text-[#7A4D30] hover:border-[#7A4D30]/30 transition-all duration-200 focus:outline-none"
           title="Home"
         >

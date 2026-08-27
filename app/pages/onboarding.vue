@@ -53,7 +53,8 @@ const handleConfirm = () => {
   // Store onboarding completed flag in localStorage
   localStorage.setItem('sedalang_onboarding_completed', 'true')
   localStorage.setItem('sedalang_user_role', selectedRole.value)
-  navigateTo('/dashboard')
+  localStorage.setItem('sedalang_user_name', profileForm.value.name || 'Bruno')
+  navigateTo('/dashboard-aiPage')
 }
 
 const goBack = () => {
