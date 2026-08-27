@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 
 definePageMeta({
   layout: 'dashboard'
 })
+
+const route = useRoute()
 
 // Check onboarding completed and load persisted chats on mount
 onMounted(() => {
@@ -23,6 +26,44 @@ onMounted(() => {
       }
     }
     
+    // Check if query parameter "craftsman" is specified
+    const craftsmanParam = route.query.craftsman as string
+    if (craftsmanParam) {
+      const existing = conversations.value.find(c => 
+        c.name.toLowerCase().includes(craftsmanParam.toLowerCase()) || 
+        c.subtitle.toLowerCase().includes(craftsmanParam.toLowerCase())
+      )
+
+      if (existing) {
+        activeConversationId.value = existing.id
+      } else {
+        const newId = conversations.value.length > 0 ? Math.max(...conversations.value.map(c => c.id)) + 1 : 1
+        const newConvo: Conversation = {
+          id: newId,
+          name: craftsmanParam,
+          subtitle: 'Craftsman • Online',
+          latestMessage: 'Halo! Saya tertarik memesan jasa Anda.',
+          statusText: 'Dalam diskusi',
+          statusColor: 'text-[#7A4D30]',
+          statusBg: 'bg-[#7A4D30]/5 border border-[#7A4D30]/20',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          avatar: '/images/landing_page_images/default_pp.webp',
+          online: true,
+          messages: [
+            {
+              id: Date.now(),
+              text: 'Halo! Saya tertarik untuk bekerja sama dalam mendaur ulang material saya. Bisakah kita berdiskusi?',
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              isOutgoing: true
+            }
+          ]
+        }
+        conversations.value.unshift(newConvo)
+        activeConversationId.value = newId
+        saveConversations()
+      }
+    }
+
     // Sync active conversation reference
     syncActiveConversation()
   }

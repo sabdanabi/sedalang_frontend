@@ -46,16 +46,21 @@ const route = useRoute()
           </svg>
         </NuxtLink>
 
-        <!-- Search Button -->
-        <button
-          type="button"
-          class="p-2.5 rounded-[12px] border border-gray-200/80 text-gray-500 hover:bg-gray-50 hover:text-[#7A4D30] hover:border-[#7A4D30]/30 transition-all duration-200 focus:outline-none cursor-pointer"
-          title="Search"
+        <!-- Search Button (Cari Pengrajin) -->
+        <NuxtLink
+          to="/search-craftsman"
+          class="p-2.5 rounded-[12px] border transition-all duration-200 focus:outline-none"
+          :class="[
+            route.path === '/search-craftsman' 
+              ? 'border-[#7A4D30]/30 bg-[#7A4D30]/5 text-[#7A4D30]' 
+              : 'border-gray-200/80 text-gray-500 hover:bg-gray-50 hover:text-[#7A4D30] hover:border-[#7A4D30]/30'
+          ]"
+          title="Cari Pengrajin"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-5 h-5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
           </svg>
-        </button>
+        </NuxtLink>
 
         <!-- History / Order History Link (4th from left) -->
         <NuxtLink
