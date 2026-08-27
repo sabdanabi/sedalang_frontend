@@ -57,20 +57,22 @@ const route = useRoute()
           </svg>
         </button>
 
-        <!-- Processing / AI Ideas Page Button -->
+        <!-- History / Order History Link (4th from left) -->
         <NuxtLink
-          to="/dashboard-aiPage"
+          to="/history"
           class="p-2.5 rounded-[12px] border transition-all duration-200 focus:outline-none"
           :class="[
-            route.path === '/dashboard-aiPage' 
+            route.path === '/history' 
               ? 'border-[#7A4D30]/30 bg-[#7A4D30]/5 text-[#7A4D30]' 
               : 'border-gray-200/80 text-gray-500 hover:bg-gray-50 hover:text-[#7A4D30] hover:border-[#7A4D30]/30'
           ]"
-          title="AI Recycling Ideas"
+          title="Riwayat Pesanan"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="w-5 h-5">
-            <circle cx="12" cy="12" r="4" />
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+          <!-- Custom history SVG icon -->
+          <svg viewBox="0 0 11 11" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5">
+            <path d="M5.375 2.375V5.375H8.375" stroke="currentColor" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10.319 4.625C9.957 2.2195 7.8815 0.375 5.375 0.375C2.6135 0.375 0.375 2.6135 0.375 5.375C0.375 8.1365 2.6135 10.375 5.375 10.375C7.425 10.375 9.1875 9.141 9.959 7.375" stroke="currentColor" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M7.875 7.375H10.075C10.1144 7.375 10.1534 7.38276 10.1898 7.39784C10.2262 7.41291 10.2593 7.43501 10.2871 7.46287C10.315 7.49073 10.3371 7.5238 10.3522 7.56019C10.3672 7.59659 10.375 7.6356 10.375 7.675V9.875" stroke="currentColor" stroke-width="0.85" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </NuxtLink>
       </div>
