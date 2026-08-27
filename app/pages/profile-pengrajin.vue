@@ -14,21 +14,11 @@ onMounted(() => {
       return
     }
 
-    // Load dynamic profile details
+    // Load dynamic profile details (includes skills)
     const savedProfile = localStorage.getItem('sedalang_artisan_profile')
     if (savedProfile) {
       try {
         profile.value = JSON.parse(savedProfile)
-      } catch (e) {
-        console.error(e)
-      }
-    }
-
-    // Load skills
-    const savedSkills = localStorage.getItem('sedalang_artisan_skills')
-    if (savedSkills) {
-      try {
-        skills.value = JSON.parse(savedSkills)
       } catch (e) {
         console.error(e)
       }
@@ -53,12 +43,6 @@ const saveProfileState = () => {
   }
 }
 
-const saveSkillsState = () => {
-  if (import.meta.client) {
-    localStorage.setItem('sedalang_artisan_skills', JSON.stringify(skills.value))
-  }
-}
-
 const saveWorksState = () => {
   if (import.meta.client) {
     localStorage.setItem('sedalang_artisan_works', JSON.stringify(works.value))
@@ -73,6 +57,7 @@ interface ProfileData {
   rating: number
   projectsCount: number
   avatar: string
+  skills: string[]
 }
 
 interface WorkItem {
@@ -89,16 +74,15 @@ const profile = ref<ProfileData>({
   location: 'Semarang Tengah, Jawa Tengah',
   rating: 4.9,
   projectsCount: 24,
-  avatar: '/images/landing_page_images/default_pp.webp'
+  avatar: '/images/landing_page_images/default_pp.webp',
+  skills: [
+    'Botol Kaca',
+    'Kaca Bekas',
+    'Dekorasi Rumah',
+    'Lampu Dekoratif',
+    'Upcycling'
+  ]
 })
-
-const skills = ref<string[]>([
-  'Botol Kaca',
-  'Kaca Bekas',
-  'Dekorasi Rumah',
-  'Lampu Dekoratif',
-  'Upcycling'
-])
 
 const works = ref<WorkItem[]>([
   {
@@ -128,11 +112,6 @@ const showDetailModal = ref(false)
 const selectedWork = ref<WorkItem | null>(null)
 
 // Action Handlers
-const handleUpdateSkills = (newSkills: string[]) => {
-  skills.value = newSkills
-  saveSkillsState()
-}
-
 const handleEditProfileSubmit = (updatedData: ProfileData) => {
   showEditModal.value = false
   profile.value = {
@@ -141,7 +120,8 @@ const handleEditProfileSubmit = (updatedData: ProfileData) => {
     description: updatedData.description,
     location: updatedData.location,
     projectsCount: updatedData.projectsCount,
-    avatar: updatedData.avatar
+    avatar: updatedData.avatar,
+    skills: updatedData.skills
   }
   saveProfileState()
 }
@@ -186,8 +166,7 @@ const handleViewWorkDetail = (item: WorkItem) => {
 
       <!-- Skills and Handled Materials tags list -->
       <FeaturesProfileSkillsList
-        :skills="skills"
-        @update:skills="handleUpdateSkills"
+        :skills="profile.skills"
       />
 
       <!-- Location and Interactive Maplibre map section -->

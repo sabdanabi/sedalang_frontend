@@ -7,6 +7,7 @@ interface ProfileData {
   location: string
   projectsCount: number
   avatar: string
+  skills: string[]
 }
 
 const props = defineProps<{
@@ -24,6 +25,8 @@ const formDesc = ref('')
 const formLocation = ref('')
 const formProjects = ref(0)
 const formAvatar = ref('')
+const formSkills = ref<string[]>([])
+const newSkillInput = ref('')
 
 // Watch changes to populate form
 watch(() => props.profile, (newVal) => {
@@ -33,6 +36,7 @@ watch(() => props.profile, (newVal) => {
     formLocation.value = newVal.location
     formProjects.value = newVal.projectsCount
     formAvatar.value = newVal.avatar
+    formSkills.value = [...(newVal.skills || [])]
   }
 }, { immediate: true })
 
@@ -76,6 +80,21 @@ const handleGetMyLocation = () => {
   )
 }
 
+// Add skill to temporary local state inside form modal
+const handleAddSkill = () => {
+  const trimmed = newSkillInput.value.trim()
+  if (!trimmed) return
+  if (!formSkills.value.includes(trimmed)) {
+    formSkills.value.push(trimmed)
+  }
+  newSkillInput.value = ''
+}
+
+// Remove skill from temporary local state inside form modal
+const handleRemoveSkill = (skillToRemove: string) => {
+  formSkills.value = formSkills.value.filter(s => s !== skillToRemove)
+}
+
 const handleFormSubmit = () => {
   if (!formName.value.trim() || !formLocation.value.trim()) {
     alert('Nama dan Lokasi tidak boleh kosong.')
@@ -88,8 +107,8 @@ const handleFormSubmit = () => {
     location: formLocation.value.trim(),
     projectsCount: Number(formProjects.value) || 0,
     avatar: formAvatar.value,
-    rating: props.profile.projectsCount // retain rating or default
-  } as any)
+    skills: formSkills.value
+  })
 }
 </script>
 
@@ -198,12 +217,54 @@ const handleFormSubmit = () => {
               </div>
             </div>
 
+            <!-- Keahlian & Material Editor -->
+            <div class="flex flex-col gap-1.5">
+              <label class="font-poppins text-xs font-bold text-gray-950">Keahlian & Material</label>
+              <div class="flex gap-2 mb-2">
+                <input
+                  v-model="newSkillInput"
+                  type="text"
+                  placeholder="Keahlian baru..."
+                  class="flex-grow bg-[#FAF8F5]/80 border border-gray-100 focus:border-[#7A4D30]/40 focus:bg-white rounded-2xl py-3.5 px-4 text-xs md:text-sm text-gray-800 outline-none transition-all font-inter"
+                  @keydown.enter.prevent="handleAddSkill"
+                />
+                <button
+                  type="button"
+                  @click="handleAddSkill"
+                  class="bg-[#7A4D30] hover:bg-[#683E25] text-white px-5 rounded-2xl text-xs font-bold font-inter cursor-pointer focus:outline-none flex-shrink-0"
+                >
+                  Tambah
+                </button>
+              </div>
+
+              <!-- List of current skills with delete 'x' button -->
+              <div class="flex flex-wrap gap-2 pt-1">
+                <span
+                  v-for="skill in formSkills"
+                  :key="skill"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-150 text-gray-700 text-[11px] font-bold font-inter bg-white select-none"
+                >
+                  {{ skill }}
+                  <button
+                    type="button"
+                    @click="handleRemoveSkill(skill)"
+                    class="text-gray-400 hover:text-[#7A4D30] transition-colors focus:outline-none cursor-pointer"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5">
+                      <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                    </svg>
+                  </button>
+                </span>
+              </div>
+            </div>
+
             <!-- Proyek Selesai -->
             <div class="flex flex-col gap-1.5">
               <label class="font-poppins text-xs font-bold text-gray-950">Jumlah Proyek Selesai</label>
               <input
                 v-model="formProjects"
                 type="number"
+                min="0"
                 class="w-full bg-[#FAF8F5]/80 border border-gray-100 focus:border-[#7A4D30]/40 focus:bg-white rounded-2xl py-3.5 px-4 text-xs md:text-sm text-gray-800 outline-none transition-all font-inter"
               />
             </div>
