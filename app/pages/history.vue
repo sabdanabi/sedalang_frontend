@@ -81,8 +81,7 @@ const selectedOrder = ref<Order | null>(null)
 const showDetailModal = ref(false)
 
 const openDetailModal = (order: Order) => {
-  selectedOrder.value = order
-  showDetailModal.value = true
+  navigateTo(`/order-progress?id=${order.id}`)
 }
 
 const closeDetailModal = () => {
@@ -91,7 +90,7 @@ const closeDetailModal = () => {
 }
 
 const handleReorder = (order: Order) => {
-  alert(`Pesanan #${order.id} (${order.productName}) berhasil dipesan kembali!`)
+  navigateTo('/chat')
 }
 </script>
 
