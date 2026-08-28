@@ -1,18 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
-  layout: false // Minimal onboarding layout
+  layout: false
 })
 
+const authStore = useAuthStore()
+
 const currentStep = ref(1)
-const selectedRole = ref<'pengguna' | 'pengrajin'>('pengrajin') // Default to 'pengrajin' as in mockup design
+const selectedRole = ref<'pengguna' | 'pengrajin'>('pengrajin')
+const isLoading = ref(false)
+const errorMsg = ref('')
 
 const profileForm = ref({
-  name: '',
-  phone: '',
   location: '',
-  skills: '',
+  craftType: '',
   photo: null as File | null
 })
 
@@ -30,7 +33,7 @@ const toggleMaterial = (index: number) => {
   materials.value[index].selected = !materials.value[index].selected
 }
 
-// Mock file upload trigger
+// File upload
 const fileInput = ref<HTMLInputElement | null>(null)
 const triggerFileUpload = () => {
   if (fileInput.value) {
@@ -44,24 +47,77 @@ const handleFileChange = (e: Event) => {
   }
 }
 
-// Handlers
-const handleNextStep = () => {
-  currentStep.value = 2
+// Step 1: Select role and proceed
+const handleNextStep = async () => {
+  isLoading.value = true
+  errorMsg.value = ''
+  try {
+    const apiRole = selectedRole.value === 'pengguna' ? 'USER' : 'CRAFTSMAN'
+    await authStore.updateRole(apiRole)
+
+    if (selectedRole.value === 'pengguna') {
+      // Skip onboarding for regular users → go to dashboard
+      await authStore.skipOnboarding()
+      navigateTo('/dashboard-aiPage')
+    } else {
+      // Proceed to craftsman profile form
+      currentStep.value = 2
+    }
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } }
+    errorMsg.value = error.data?.message || 'Gagal memilih peran. Silakan coba lagi.'
+  } finally {
+    isLoading.value = false
+  }
 }
 
-const handleConfirm = () => {
-  // Store onboarding completed flag in localStorage
-  localStorage.setItem('sedalang_onboarding_completed', 'true')
-  localStorage.setItem('sedalang_user_role', selectedRole.value)
-  localStorage.setItem('sedalang_user_name', profileForm.value.name || 'Bruno')
-  navigateTo('/dashboard-aiPage')
+// Step 2: Submit craftsman onboarding
+const handleConfirm = async () => {
+  const selectedSkills = materials.value
+    .filter(m => m.selected)
+    .map(m => m.name)
+
+  if (selectedSkills.length === 0) {
+    errorMsg.value = 'Pilih minimal satu material yang Anda terima.'
+    return
+  }
+
+  if (!profileForm.value.location.trim()) {
+    errorMsg.value = 'Lokasi workshop wajib diisi.'
+    return
+  }
+
+  isLoading.value = true
+  errorMsg.value = ''
+
+  try {
+    const formData = new FormData()
+    formData.append('location', profileForm.value.location)
+    formData.append('skills', selectedSkills.join(', '))
+
+    if (profileForm.value.craftType.trim()) {
+      formData.append('craftType', profileForm.value.craftType)
+    }
+
+    if (profileForm.value.photo) {
+      formData.append('portfolios', profileForm.value.photo)
+    }
+
+    await authStore.completeCraftsmanOnboarding(formData)
+    navigateTo('/dashboard-aiPage')
+  } catch (err: unknown) {
+    const error = err as { data?: { message?: string } }
+    errorMsg.value = error.data?.message || 'Gagal menyimpan data pengrajin. Silakan coba lagi.'
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const goBack = () => {
+  errorMsg.value = ''
   if (currentStep.value === 2) {
     currentStep.value = 1
   } else {
-    // Go back to login
     navigateTo('/login')
   }
 }
@@ -70,7 +126,7 @@ const goBack = () => {
 <template>
   <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4 md:p-6 font-inter select-none">
     
-    <!-- Main Card Container (Restored to compact vertical mockup dimensions) -->
+    <!-- Main Card Container -->
     <div class="w-full max-w-2xl bg-white border border-[#EAEAEA] rounded-[32px] p-6 md:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.02)] flex flex-col justify-between min-h-[640px]">
       
       <!-- Top Section -->
@@ -81,11 +137,20 @@ const goBack = () => {
           type="button"
           class="text-gray-900 hover:text-[#7F5539] transition-colors cursor-pointer mb-8 focus:outline-none"
           aria-label="Kembali"
+          :disabled="isLoading"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
         </button>
+
+        <!-- Error Banner -->
+        <div v-if="errorMsg" class="mb-5 p-3.5 rounded-[12px] bg-red-50 border border-red-100 text-red-600 text-xs font-semibold font-inter animate-fade-in flex items-center gap-2.5">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 shrink-0">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+          <span>{{ errorMsg }}</span>
+        </div>
 
         <!-- STEP 1: CHOOSE ROLE -->
         <div v-if="currentStep === 1" class="flex flex-col space-y-6">
@@ -189,55 +254,31 @@ const goBack = () => {
 
           <!-- Form Grid -->
           <form class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <!-- Nama -->
-              <div class="flex flex-col space-y-1.5">
-                <label class="font-poppins text-xs font-bold text-gray-900">Nama</label>
-                <input 
-                  v-model="profileForm.name"
-                  type="text" 
-                  placeholder="Masukkan nama"
-                  class="border border-gray-200 rounded-[14px] px-4 py-3 text-sm focus:border-[#7F5539] focus:outline-none transition-colors"
-                />
-              </div>
-
-              <!-- No Telepon -->
-              <div class="flex flex-col space-y-1.5">
-                <label class="font-poppins text-xs font-bold text-gray-900">No.telepon</label>
-                <input 
-                  v-model="profileForm.phone"
-                  type="tel" 
-                  placeholder="Masukkan no. telepon"
-                  class="border border-gray-200 rounded-[14px] px-4 py-3 text-sm focus:border-[#7F5539] focus:outline-none transition-colors"
-                />
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Lokasi -->
               <div class="flex flex-col space-y-1.5">
                 <label class="font-poppins text-xs font-bold text-gray-900">Lokasi</label>
                 <input 
                   v-model="profileForm.location"
                   type="text" 
-                  placeholder="Masukkan lokasi"
+                  placeholder="Contoh: Sleman, Yogyakarta"
                   class="border border-gray-200 rounded-[14px] px-4 py-3 text-sm focus:border-[#7F5539] focus:outline-none transition-colors"
                 />
               </div>
 
-              <!-- Keahlian -->
+              <!-- Jenis Pengrajin -->
               <div class="flex flex-col space-y-1.5">
-                <label class="font-poppins text-xs font-bold text-gray-900">Keahlian</label>
+                <label class="font-poppins text-xs font-bold text-gray-900">Jenis Pengrajin</label>
                 <input 
-                  v-model="profileForm.skills"
+                  v-model="profileForm.craftType"
                   type="text" 
-                  placeholder="Masukkan Keahlian"
+                  placeholder="Contoh: Pengrajin Kayu & Furnitur"
                   class="border border-gray-200 rounded-[14px] px-4 py-3 text-sm focus:border-[#7F5539] focus:outline-none transition-colors"
                 />
               </div>
             </div>
 
-            <!-- Material yang diterima (Materials accepted list) -->
+            <!-- Material yang diterima -->
             <div class="flex flex-col space-y-1.5 pt-2">
               <label class="font-poppins text-xs font-bold text-gray-900">Material yang diterima</label>
               <div class="flex flex-wrap gap-2.5">
@@ -274,7 +315,7 @@ const goBack = () => {
               >
                 <div class="flex items-center gap-2">
                   <span class="text-lg">+</span>
-                  <span>{{ profileForm.photo ? profileForm.photo.name : 'Tambahkan foto' }}</span>
+                  <span>{{ profileForm.photo ? profileForm.photo.name : 'Tambahkan foto portofolio' }}</span>
                 </div>
                 <!-- Paper Plane Icon -->
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 transform rotate-45">
@@ -294,9 +335,14 @@ const goBack = () => {
           v-if="currentStep === 1"
           @click="handleNextStep"
           type="button"
-          class="w-full bg-[#7F5539] hover:bg-[#66432c] text-white font-poppins font-semibold py-4 rounded-[20px] transition-colors duration-200 flex items-center justify-center cursor-pointer shadow-sm focus:outline-none"
+          :disabled="isLoading"
+          class="w-full bg-[#7F5539] hover:bg-[#66432c] text-white font-poppins font-semibold py-4 rounded-[20px] transition-colors duration-200 flex items-center justify-center cursor-pointer shadow-sm focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Lanjut Sebagai {{ selectedRole === 'pengguna' ? 'Pengguna' : 'Pengrajin' }}
+          <svg v-if="isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          {{ isLoading ? 'Memproses...' : `Lanjut Sebagai ${selectedRole === 'pengguna' ? 'Pengguna' : 'Pengrajin'}` }}
         </button>
 
         <!-- Step 2 Buttons (Kembali & Simpan Data) -->
@@ -305,7 +351,8 @@ const goBack = () => {
           <button 
             @click="goBack"
             type="button"
-            class="w-full border border-[#7F5539] text-[#7F5539] bg-white hover:bg-[#7F553912] font-poppins font-semibold py-4 rounded-[20px] transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer focus:outline-none"
+            :disabled="isLoading"
+            class="w-full border border-[#7F5539] text-[#7F5539] bg-white hover:bg-[#7F553912] font-poppins font-semibold py-4 rounded-[20px] transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <span>Kembali</span>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
@@ -317,10 +364,15 @@ const goBack = () => {
           <button 
             @click="handleConfirm"
             type="button"
-            class="w-full bg-[#7F5539] hover:bg-[#66432c] text-white font-poppins font-semibold py-4 rounded-[20px] transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-sm focus:outline-none"
+            :disabled="isLoading"
+            class="w-full bg-[#7F5539] hover:bg-[#66432c] text-white font-poppins font-semibold py-4 rounded-[20px] transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-sm focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <span>Simpan Data</span>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+            <svg v-if="isLoading" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>{{ isLoading ? 'Menyimpan...' : 'Simpan Data' }}</span>
+            <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
             </svg>
           </button>

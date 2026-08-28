@@ -1,28 +1,41 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
   layout: 'auth'
 })
+
+const authStore = useAuthStore()
 
 const name = ref('')
 const phone = ref('')
 const email = ref('')
 const password = ref('')
 const isLoading = ref(false)
+const errorMsg = ref('')
 
 const handleRegister = async () => {
   isLoading.value = true
-  // Mock registration delay
-  setTimeout(() => {
+  errorMsg.value = ''
+  try {
+    await authStore.register({
+      email: email.value,
+      password: password.value,
+      fullName: name.value,
+      phoneNumber: phone.value
+    })
+    navigateTo('/onboarding')
+  } catch (err: any) {
+    errorMsg.value = err.data?.message || 'Registrasi gagal. Silakan coba lagi.'
+  } finally {
     isLoading.value = false
-    alert(`Pendaftaran berhasil!\nNama: ${name.value}\nEmail: ${email.value}`)
-  }, 1000)
+  }
 }
 </script>
 
 <template>
-  <div class="w-full">
+  <div class="w-full text-left">
     <!-- Header -->
     <header class="mb-8">
       <h1 class="font-poppins text-3xl font-medium tracking-tight text-[#1A1A1A]">
@@ -32,6 +45,11 @@ const handleRegister = async () => {
         Buat akun Anda sekarang
       </p>
     </header>
+
+    <!-- Error Banner -->
+    <div v-if="errorMsg" class="mb-5 p-3.5 rounded-[12px] bg-red-50 border border-red-100 text-red-600 text-xs font-semibold font-inter animate-fade-in">
+      {{ errorMsg }}
+    </div>
 
     <!-- Registration Form -->
     <form @submit.prevent="handleRegister" class="space-y-5">
