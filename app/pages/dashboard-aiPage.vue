@@ -268,6 +268,12 @@ const closeProductDetail = () => {
   showModal.value = false
   selectedProduct.value = null
 }
+
+const handleUseIdea = () => {
+  showModal.value = false
+  selectedProduct.value = null
+  navigateTo('/select-craftsman')
+}
 </script>
 
 <template>
@@ -362,6 +368,7 @@ const closeProductDetail = () => {
       :show="showModal"
       :product="selectedProduct"
       @close="closeProductDetail"
+      @use-idea="handleUseIdea"
     />
   </div>
 </template>

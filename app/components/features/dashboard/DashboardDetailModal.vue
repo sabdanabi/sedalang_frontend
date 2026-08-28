@@ -37,6 +37,7 @@ defineProps<{
 
 defineEmits<{
   (e: 'close'): void
+  (e: 'use-idea'): void
 }>()
 </script>
 
@@ -204,7 +205,7 @@ defineEmits<{
           <div class="mt-6 pt-4 border-t border-gray-100 flex justify-center">
             <button
               type="button"
-              @click="$emit('close')"
+              @click="$emit('use-idea')"
               class="w-full border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30] hover:text-white py-3 rounded-full text-sm font-semibold transition-all duration-300 flex items-center justify-center gap-1.5 group cursor-pointer focus:outline-none"
             >
               Gunakan Ide Ini
