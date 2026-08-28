@@ -1,53 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useAuthStore } from '~/stores/auth'
+import { navigateTo } from '#app'
 
 definePageMeta({
   layout: 'dashboard'
 })
-
-// Onboarding validation
-onMounted(() => {
-  if (import.meta.client) {
-    const completed = localStorage.getItem('sedalang_onboarding_completed')
-    if (!completed) {
-      navigateTo('/onboarding')
-      return
-    }
-
-    // Load dynamic profile details (includes skills)
-    const savedProfile = localStorage.getItem('sedalang_artisan_profile')
-    if (savedProfile) {
-      try {
-        profile.value = JSON.parse(savedProfile)
-      } catch (e) {
-        console.error(e)
-      }
-    }
-
-    // Load works
-    const savedWorks = localStorage.getItem('sedalang_artisan_works')
-    if (savedWorks) {
-      try {
-        works.value = JSON.parse(savedWorks)
-      } catch (e) {
-        console.error(e)
-      }
-    }
-  }
-})
-
-// Save profile state
-const saveProfileState = () => {
-  if (import.meta.client) {
-    localStorage.setItem('sedalang_artisan_profile', JSON.stringify(profile.value))
-  }
-}
-
-const saveWorksState = () => {
-  if (import.meta.client) {
-    localStorage.setItem('sedalang_artisan_works', JSON.stringify(works.value))
-  }
-}
 
 // Interfaces
 interface ProfileData {
@@ -67,7 +25,9 @@ interface WorkItem {
   image: string
 }
 
-// Reactive States
+const authStore = useAuthStore()
+
+// Reactive States (initially populated with dummy data, overwritten upon API load)
 const profile = ref<ProfileData>({
   name: 'Karyaloka Craft',
   description: 'Karyaloka Craft',
@@ -84,26 +44,122 @@ const profile = ref<ProfileData>({
   ]
 })
 
-const works = ref<WorkItem[]>([
-  {
-    id: 1,
-    title: 'Tempat Pensil Kaleng Kemasan',
-    description: 'Kaleng bekas dimanfaatkan kembali menjadi tempat pensil yang sederhana dan fungsional. Dengan tambahan dekorasi bernuansa natural, karya ini memberikan tampilan yang menarik sekaligus mengurangi limbah kemasan.',
-    image: '/images/default_images/default_img.webp'
-  },
-  {
-    id: 2,
-    title: 'Lampu Meja Dekorasi',
-    description: 'Ubah botol bekas menjadi lampu meja dekoratif yang unik dengan tambahan LED. Hasilnya memberikan kesan hangat dan estetik sekaligus memanfaatkan kembali barang yang sudah tidak terpakai.',
-    image: '/images/default_images/default_img.webp'
-  },
-  {
-    id: 3,
-    title: 'Tote Bag Denim',
-    description: 'Ubah celana jeans bekas menjadi tas tote yang praktis dan stylish. Bahan denim yang sudah tidak terpakai dimanfaatkan kembali menjadi tas yang kuat, fungsional, dan karya ini sekaligus mengurangi limbah tekstil.',
-    image: '/images/default_images/default_img.webp'
+const works = ref<WorkItem[]>([])
+
+const loadProfile = async () => {
+  try {
+    const userData = await authStore.getMe()
+    if (userData) {
+      if (userData.role === 'USER') {
+        navigateTo('/profile')
+        return
+      }
+
+      const craftsman = userData.craftsman as any
+      profile.value = {
+        name: userData.fullName || '',
+        description: craftsman?.craftType || 'Pengrajin',
+        location: craftsman?.location || 'Semarang Tengah, Jawa Tengah',
+        rating: craftsman?.rating || 4.9,
+        projectsCount: craftsman?.projectsCount || 24,
+        avatar: userData.avatarUrl || '/images/landing_page_images/default_pp.webp',
+        skills: typeof craftsman?.skills === 'string'
+          ? craftsman.skills.split(',').map((s: string) => s.trim()).filter(Boolean)
+          : (Array.isArray(craftsman?.skills) ? craftsman.skills : [])
+      }
+
+      // Check if artisan profile is also saved in localStorage to merge local edits
+      const savedProfile = localStorage.getItem('sedalang_artisan_profile')
+      if (savedProfile) {
+        try {
+          const parsed = JSON.parse(savedProfile)
+          profile.value = {
+            ...profile.value,
+            ...parsed
+          }
+        } catch (e) {
+          console.error('Error parsing local artisan profile:', e)
+        }
+      }
+
+      // Load works from API/craftsman portfolios
+      const apiWorks = craftsman?.portfolios || craftsman?.works || craftsman?.portfolio
+      if (apiWorks) {
+        if (Array.isArray(apiWorks)) {
+          works.value = apiWorks.map((w: any, index: number) => {
+            if (typeof w === 'string') {
+              return {
+                id: index + 1,
+                title: `Karya ${index + 1}`,
+                description: `Portofolio karya pengrajin ${profile.value.name}`,
+                image: w
+              }
+            } else {
+              return {
+                id: w.id || (index + 1),
+                title: w.title || `Karya ${index + 1}`,
+                description: w.description || `Deskripsi karya`,
+                image: w.image || w.imageUrl || '/images/default_images/default_img.webp'
+              }
+            }
+          })
+        } else if (typeof apiWorks === 'string') {
+          works.value = [
+            {
+              id: 1,
+              title: 'Karya Portofolio',
+              description: `Portofolio karya pengrajin ${profile.value.name}`,
+              image: apiWorks
+            }
+          ]
+        } else {
+          works.value = []
+        }
+      } else {
+        // Fallback to local storage if available, otherwise empty to remove dummy data
+        const savedWorks = localStorage.getItem('sedalang_artisan_works')
+        if (savedWorks) {
+          try {
+            works.value = JSON.parse(savedWorks)
+          } catch (e) {
+            console.error('Error parsing local artisan works:', e)
+            works.value = []
+          }
+        } else {
+          works.value = []
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error loading craftsman profile from API:', err)
   }
-])
+}
+
+// Onboarding validation
+onMounted(() => {
+  if (import.meta.client) {
+    const completed = localStorage.getItem('sedalang_onboarding_completed')
+    if (!completed) {
+      navigateTo('/onboarding')
+      return
+    }
+
+    loadProfile()
+  }
+})
+
+// Save profile state
+const saveProfileState = () => {
+  if (import.meta.client) {
+    localStorage.setItem('sedalang_artisan_profile', JSON.stringify(profile.value))
+  }
+}
+
+const saveWorksState = () => {
+  if (import.meta.client) {
+    localStorage.setItem('sedalang_artisan_works', JSON.stringify(works.value))
+  }
+}
 
 // Modal visibility toggles
 const showEditModal = ref(false)
@@ -112,18 +168,29 @@ const showDetailModal = ref(false)
 const selectedWork = ref<WorkItem | null>(null)
 
 // Action Handlers
-const handleEditProfileSubmit = (updatedData: ProfileData) => {
-  showEditModal.value = false
-  profile.value = {
-    ...profile.value,
-    name: updatedData.name,
-    description: updatedData.description,
-    location: updatedData.location,
-    projectsCount: updatedData.projectsCount,
-    avatar: updatedData.avatar,
-    skills: updatedData.skills
+const handleEditProfileSubmit = async (updatedData: ProfileData) => {
+  try {
+    await authStore.updateCraftsmanProfile({
+      location: updatedData.location,
+      craftType: updatedData.description,
+      skills: updatedData.skills.join(', ')
+    })
+
+    showEditModal.value = false
+    profile.value = {
+      ...profile.value,
+      name: updatedData.name,
+      description: updatedData.description,
+      location: updatedData.location,
+      projectsCount: updatedData.projectsCount,
+      avatar: updatedData.avatar,
+      skills: updatedData.skills
+    }
+    saveProfileState()
+  } catch (err) {
+    console.error('Failed to update craftsman profile:', err)
+    alert('Gagal memperbarui profil pengrajin. Silakan coba lagi.')
   }
-  saveProfileState()
 }
 
 const handleAddWorkSubmit = (newWorkData: { title: string; image: string; description: string }) => {
@@ -170,7 +237,7 @@ const handleViewWorkDetail = (item: WorkItem) => {
       />
 
       <!-- Location and Interactive Maplibre map section -->
-      <FeaturesProfileMapSection />
+      <FeaturesProfileMapSection :location="profile.location" />
 
       <!-- Portfolio works gallery grid -->
       <FeaturesProfilePortfolioGrid

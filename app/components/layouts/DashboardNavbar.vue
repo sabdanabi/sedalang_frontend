@@ -1,6 +1,39 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
+import { computed, onMounted } from 'vue'
+import { useAuthStore } from '~/stores/auth'
+
 const route = useRoute()
+const authStore = useAuthStore()
+
+onMounted(async () => {
+  if (!authStore.user) {
+    try {
+      await authStore.getMe()
+    } catch (err) {
+      console.error('Error fetching user for navbar:', err)
+    }
+  }
+})
+
+const profilePath = computed(() => {
+  return authStore.user?.role === 'CRAFTSMAN' ? '/profile-pengrajin' : '/profile'
+})
+
+const userDisplayName = computed(() => {
+  return authStore.user?.fullName || 'Bruno James'
+})
+
+const userRoleText = computed(() => {
+  if (authStore.user) {
+    return authStore.user.role === 'CRAFTSMAN' ? 'Pengrajin' : 'Pengguna'
+  }
+  return 'Creative design'
+})
+
+const userAvatar = computed(() => {
+  return authStore.user?.avatarUrl || '/images/landing_page_images/default_pp.webp'
+})
 </script>
 
 <template>
@@ -83,15 +116,15 @@ const route = useRoute()
       </div>
 
       <!-- Right: User profile photo & info (Cari/Edit profile) -->
-      <NuxtLink to="/profile" class="flex items-center gap-3 hover:opacity-90 focus:outline-none select-none">
+      <NuxtLink :to="profilePath" class="flex items-center gap-3 hover:opacity-90 focus:outline-none select-none">
         <img
-          src="/images/landing_page_images/default_pp.webp"
-          alt="Bruno James avatar"
+          :src="userAvatar"
+          :alt="userDisplayName + ' avatar'"
           class="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-sm"
         />
         <div class="hidden sm:flex flex-col text-left">
-          <span class="text-sm font-semibold text-gray-900 leading-none">Bruno James</span>
-          <span class="text-[11px] text-gray-400 mt-1 font-medium leading-none">Creative design</span>
+          <span class="text-sm font-semibold text-gray-900 leading-none">{{ userDisplayName }}</span>
+          <span class="text-[11px] text-gray-400 mt-1 font-medium leading-none">{{ userRoleText }}</span>
         </div>
       </NuxtLink>
 

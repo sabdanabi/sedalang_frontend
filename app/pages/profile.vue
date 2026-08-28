@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useAuthStore } from '~/stores/auth'
+import { navigateTo } from '#app'
 
 definePageMeta({
   layout: 'dashboard'
@@ -24,6 +26,44 @@ const profile = ref<UserProfile>({
 })
 
 const showEditModal = ref(false)
+const authStore = useAuthStore()
+
+const loadProfile = async () => {
+  try {
+    const userData = await authStore.getMe()
+    if (userData) {
+      if (userData.role === 'CRAFTSMAN') {
+        navigateTo('/profile-pengrajin')
+        return
+      }
+
+      profile.value = {
+        name: userData.fullName || '',
+        location: (userData.craftsman as any)?.location || 'Semarang Tengah, Jawa Tengah',
+        email: userData.email || '',
+        phone: userData.phoneNumber || '',
+        avatar: userData.avatarUrl || '/images/landing_page_images/default_pp.webp',
+        role: 'Pengguna'
+      }
+
+      // Check if user has saved profile edits in local storage
+      const savedProfile = localStorage.getItem('sedalang_user_profile')
+      if (savedProfile) {
+        try {
+          const parsed = JSON.parse(savedProfile)
+          profile.value = {
+            ...profile.value,
+            ...parsed
+          }
+        } catch (e) {
+          console.error('Error parsing local profile data:', e)
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error loading profile from API:', err)
+  }
+}
 
 onMounted(() => {
   if (import.meta.client) {
@@ -33,14 +73,7 @@ onMounted(() => {
       return
     }
 
-    const savedProfile = localStorage.getItem('sedalang_user_profile')
-    if (savedProfile) {
-      try {
-        profile.value = JSON.parse(savedProfile)
-      } catch (e) {
-        console.error(e)
-      }
-    }
+    loadProfile()
   }
 })
 
@@ -97,7 +130,7 @@ const handleEditSubmit = (updatedData: UserProfile) => {
 
         <!-- Right: Maplibre GL interactive Map -->
         <div>
-          <FeaturesProfileUserProfileMapSection />
+          <FeaturesProfileUserProfileMapSection :location="profile.location" />
         </div>
 
       </div>

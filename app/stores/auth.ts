@@ -174,6 +174,17 @@ export const useAuthStore = defineStore('auth', () => {
     navigateTo('/login')
   }
 
+  // Update craftsman details
+  const updateCraftsmanProfile = async (data: { location: string; craftType: string; skills: string }) => {
+    const response = await api('/api/v1/craftsmen/me', {
+      method: 'PATCH',
+      body: data
+    }) as ApiResponse<{ message: string }>
+
+    await getMe()
+    return response.data
+  }
+
   return {
     user,
     token,
@@ -185,6 +196,7 @@ export const useAuthStore = defineStore('auth', () => {
     updateRole,
     completeCraftsmanOnboarding,
     skipOnboarding,
-    logout
+    logout,
+    updateCraftsmanProfile
   }
 })
