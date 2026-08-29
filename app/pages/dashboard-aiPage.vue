@@ -16,7 +16,7 @@ const userName = computed(() => {
 })
 
 const isAnalyzing = ref(false)
-const detectedMaterial = ref('Plastik')
+const detectedMaterial = ref('')
 const showModal = ref(false)
 const selectedProduct = ref<Product | null>(null)
 
@@ -73,144 +73,9 @@ interface Product {
   materialType: string
 }
 
-const defaultProducts: Product[] = [
-  {
-    id: 1,
-    title: 'Tempat Pensil Kaleng Bekas',
-    subtitle: 'Ubah limbah anorganik menjadi dekorasi meja yang fungsional dan estetis.',
-    description: 'Kaleng bekas dimanfaatkan kembali menjadi tempat pencil yang sederhana dan fungsional. Dengan tambahan dekorasi bernuansa natural, karya ini memberikan tampilan yang menarik sekaligus mengurangi limbah kemasan.',
-    detailDescription: 'Proyek ini mengusung konsep ekonomi sirkular dengan memanfaatkan kaleng bekas makanan atau minuman. Melalui sentuhan cat organik dan dekorasi minimalis, kaleng yang semula menjadi limbah ditransformasikan menjadi wadah alat tulis premium yang tahan lama dan ramah lingkungan. Cocok untuk mempercantik ruang kerja bergaya Japandi atau Industrial.',
-    tools: [
-      { name: 'Gunting', icon: '✂' },
-      { name: 'Kuas', icon: '🖌' },
-      { name: 'Cutter', icon: '🔪' },
-      { name: 'Amplas', icon: '▤' },
-      { name: 'Penggaris', icon: '📏' }
-    ],
-    materials: ['Kaleng Bekas', 'Kertas Dekorasi', 'Lem Serbaguna', 'Cat Akrilik', 'Lapisan Pelindung'],
-    skills: [
-      {
-        name: 'Upcycling',
-        icon: '♻',
-        desc: 'Mengelola kaleng bekas menjadi produk baru yang memiliki nilai guna dan estetika',
-        color: 'bg-[#F2FAF3] text-[#2D7A41] border-[#D6EFE0]'
-      },
-      {
-        name: 'Kerajinan Dekoratif',
-        icon: '🎨',
-        desc: 'Membuat serta menerapkan motif atau dekorasi agar produk memiliki tampilan yang menarik.',
-        color: 'bg-[#FFF8F2] text-[#B25E15] border-[#FCE9D8]'
-      },
-      {
-        name: 'Pengolahan Material',
-        icon: '🛠',
-        desc: 'Memotong, membersihkan, dan membentuk material bekas agar siap digunakan sebagai bahan karya.',
-        color: 'bg-[#F5F7FA] text-[#475569] border-[#E2E8F0]'
-      }
-    ],
-    steps: [
-      { title: 'Persiapan', desc: 'Membersihkan kaleng dari sisa makanan dan label yang terpasang' },
-      { title: 'Perapian', desc: 'Menghaluskankan bagian pinggir kaleng dengan amplas supaya aman' },
-      { title: 'Dekorasi', desc: 'Pengecatan dasar dan pembuatan motif atau kertas dekorasi' },
-      { title: 'Finishing', desc: 'Pemberian lapisan pelindung untuk ketahanan cat atau motif' },
-      { title: 'Pemeriksaan', desc: 'Pengecekan kualitas produk sebelum digunakan' }
-    ],
-    image: '/images/default_images/default_img.webp',
-    materialType: 'Logam / Kaleng'
-  },
-  {
-    id: 2,
-    title: 'Lampu Meja Dekorasi',
-    subtitle: 'Ubah botol bekas menjadi penerangan ruang yang estetik dan hangat.',
-    description: 'Ubah botol bekas menjadi lampu meja dekoratif yang unik dengan tambahan LED. Hasilnya memberikan kesan hangat dan estetik sekaligus memanfaatkan kembali barang yang sudah tidak terpakai.',
-    detailDescription: 'Lampu meja estetik dengan efek cahaya hangat yang dibuat dari botol bekas terpilih. Dilengkapi dengan dudukan kayu minimalis dan lampu LED hemat energi. Mengubah limbah botol kaca atau plastik tebal menjadi dekorasi interior premium bernuansa hangat dan nyaman untuk kamar tidur atau ruang tamu.',
-    tools: [
-      { name: 'Solder', icon: '🔌' },
-      { name: 'Lem Tembak', icon: '🔫' },
-      { name: 'Bor Kecil', icon: '⚙' },
-      { name: 'Cutter', icon: '🔪' },
-      { name: 'Penggaris', icon: '📏' }
-    ],
-    materials: ['Botol Kaca Bekas', 'Lampu LED Strip', 'Kabel & Sakelar', 'Dudukan Kayu', 'Cat Transparan'],
-    skills: [
-      {
-        name: 'Rangkaian Listrik',
-        icon: '⚡',
-        desc: 'Menyusun kabel LED dan sakelar sederhana untuk kelistrikan yang aman.',
-        color: 'bg-[#FFF5F5] text-[#C53030] border-[#FEB2B2]/40'
-      },
-      {
-        name: 'Upcycling',
-        icon: '♻',
-        desc: 'Mengubah struktur limbah botol kaca menjadi fungsi pencahayaan yang fungsional.',
-        color: 'bg-[#F2FAF3] text-[#2D7A41] border-[#D6EFE0]'
-      },
-      {
-        name: 'Pengolahan Kayu',
-        icon: '🪵',
-        desc: 'Membuat potongan dudukan kayu dan merapikannya dengan pernis.',
-        color: 'bg-[#FFF8F2] text-[#B25E15] border-[#FCE9D8]'
-      }
-    ],
-    steps: [
-      { title: 'Pembersihan', desc: 'Mencuci botol kaca bekas hingga bersih dan mengeringkannya sepenuhnya' },
-      { title: 'Melubangi Botol', desc: 'Melubangi bagian bawah botol kaca dengan bor khusus secara perlahan' },
-      { title: 'Merangkai LED', desc: 'Memasukkan kabel lampu LED ke dalam botol dan merangkainya' },
-      { title: 'Dudukan Kayu', desc: 'Memasang botol pada dudukan kayu minimalis menggunakan lem rekat kuat' },
-      { title: 'Pengujian', desc: 'Menghubungkan ke sakelar dan baterai untuk memastikan lampu berfungsi' }
-    ],
-    image: '/images/default_images/default_img.webp',
-    materialType: 'Plastik / Kaca'
-  },
-  {
-    id: 3,
-    title: 'Tote Bag Denim',
-    subtitle: 'Ubah celana jeans bekas menjadi tas jinjing modis yang kuat dan ramah lingkungan.',
-    description: 'Ubah celana jeans bekas menjadi tas tote yang praktis dan stylish. Bahan denim yang sudah tidak terpakai dimanfaatkan kembali menjadi tas yang kuat, fungsional, dan karya ini sekaligus mengurangi limbah tekstil.',
-    detailDescription: 'Tas tote bag kasual yang dijahit dari celana jeans denim yang sudah tidak digunakan lagi. Dengan pegangan kulit sintetis berwarna cokelat dan saku jeans asli di bagian depan untuk fungsionalitas ekstra. Kuat untuk membawa buku, tablet, atau belanjaan sehari-hari.',
-    tools: [
-      { name: 'Gunting Kain', icon: '✂' },
-      { name: 'Mesin Jahit', icon: '🧵' },
-      { name: 'Jarum Pentul', icon: '📍' },
-      { name: 'Kapur Jahit', icon: '✏' },
-      { name: 'Penggaris', icon: '📏' }
-    ],
-    materials: ['Celana Jeans Bekas', 'Benang Jahit Tebal', 'Tali Kulit Sintetis', 'Kain Furing', 'Paku Keling (Rivet)'],
-    skills: [
-      {
-        name: 'Teknik Jahit',
-        icon: '🧵',
-        desc: 'Menjahit material denim tebal menggunakan mesin jahit secara presisi dan kuat.',
-        color: 'bg-[#F0F5FF] text-[#1E3A8A] border-[#D1E2FF]'
-      },
-      {
-        name: 'Desain Pola',
-        icon: '📐',
-        desc: 'Merancang potongan jeans agar sesuai dengan pola tas yang bervolume.',
-        color: 'bg-[#FDF2F8] text-[#9D174D] border-[#FCE7F3]'
-      },
-      {
-        name: 'Upcycling',
-        icon: '♻',
-        desc: 'Mengolah sisa pakaian jeans denim tidak terpakai menjadi barang baru.',
-        color: 'bg-[#F2FAF3] text-[#2D7A41] border-[#D6EFE0]'
-      }
-    ],
-    steps: [
-      { title: 'Pola Potong', desc: 'Membuat garis potong pada celana jeans bekas sesuai ukuran tinggi tas' },
-      { title: 'Jahit Alas', desc: 'Membalik kain jeans and menjahit bagian bawah potongan untuk menutup dasar tas' },
-      { title: 'Kain Furing', desc: 'Memasang kain furing pelapis bagian dalam tas agar penyimpanan lebih rapi' },
-      { title: 'Pegangan Tas', desc: 'Memasang tali kulit sintetis pada bibir tas menggunakan rivet atau jahitan ganda' },
-      { title: 'Aksesoris Saku', desc: 'Memindahkan saku celana belakang ke bagian depan tas sebagai saku luar' }
-    ],
-    image: '/images/default_images/default_img.webp',
-    materialType: 'Kain Perca / Denim'
-  }
-]
+const products = ref<Product[]>([])
 
-const products = ref<Product[]>(defaultProducts)
-
-const mapIdeaToProduct = (idea: any, materialName: string): Product => {
+const mapIdeaToProduct = (idea: any, materialName: string, defaultImage?: string): Product => {
   return {
     id: idea.id,
     title: idea.ideaTitle || 'Ide Daur Ulang',
@@ -232,7 +97,7 @@ const mapIdeaToProduct = (idea: any, materialName: string): Product => {
       title: `Langkah ${idx + 1}`,
       desc: stepDesc
     })),
-    image: idea.imageUrl || '/images/default_images/default_img.webp',
+    image: idea.imageUrl || defaultImage || '/images/default_images/default_img.webp',
     materialType: materialName
   }
 }
@@ -245,7 +110,7 @@ const history = computed(() => {
       promptText: record.detectedMaterial,
       previewImage: record.rawImageUrl,
       detectedMaterial: record.detectedMaterial,
-      products: record.ideas.map(idea => mapIdeaToProduct(idea, record.detectedMaterial))
+      products: record.ideas.map(idea => mapIdeaToProduct(idea, record.detectedMaterial, record.rawImageUrl))
     }
   })
 })
@@ -262,7 +127,7 @@ const loadAILearning = async () => {
     if (hist && hist.length > 0) {
       const latest = hist[0]
       detectedMaterial.value = latest.detectedMaterial
-      products.value = latest.ideas.map(idea => mapIdeaToProduct(idea, latest.detectedMaterial))
+      products.value = latest.ideas.map(idea => mapIdeaToProduct(idea, latest.detectedMaterial, latest.rawImageUrl))
     }
   } catch (err) {
     console.error('Error loading AI history:', err)
@@ -280,7 +145,7 @@ const handlePromptSubmit = async (data: { promptText: string; selectedFile: File
   try {
     const record = await aiStore.analyzeIdeas(data.selectedFile)
     detectedMaterial.value = record.detectedMaterial
-    products.value = record.ideas.map(idea => mapIdeaToProduct(idea, record.detectedMaterial))
+    products.value = record.ideas.map(idea => mapIdeaToProduct(idea, record.detectedMaterial, record.rawImageUrl))
   } catch (err) {
     console.error('AI Analysis failed:', err)
     alert('Gagal menganalisis gambar. Pastikan Anda mengunggah berkas gambar yang valid.')
@@ -360,38 +225,53 @@ const handleUseIdea = () => {
         </div>
       </section>
 
-      <!-- Analysis Results Header Section -->
-      <section class="mb-8 border-t border-gray-100 pt-10">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div class="text-left">
-            <h2 class="font-poppins text-2xl md:text-3xl font-bold text-gray-950">
-              Hasil Analisis
-            </h2>
-            <p class="font-inter text-sm md:text-base text-gray-500 mt-1.5">
-              Material terdeteksi berbahan : 
-              <span class="text-[#7A4D30] font-bold">{{ detectedMaterial }}</span>
-            </p>
-          </div>
-          <!-- Loader indicator -->
-          <div v-if="isAnalyzing" class="flex items-center gap-2 text-[#7A4D30] text-sm font-semibold">
-            <svg class="animate-spin h-5 w-5 text-[#7A4D30]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-            </svg>
-            AI sedang menganalisis...
-          </div>
+      <!-- Empty State Section -->
+      <section v-if="products.length === 0 && !isAnalyzing" class="mb-10 text-center py-16 px-4 border border-dashed border-gray-200 rounded-[32px] bg-gray-50/50">
+        <div class="w-16 h-16 bg-[#7A4D30]/5 rounded-full flex items-center justify-center mx-auto mb-4 text-[#7A4D30]">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 21m0 0-.813-5.096L9 21Zm0 0h5.096H9.813ZM3 16.5v-6a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 10.5v6a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 16.5Zm0-6a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 10.5v6" />
+          </svg>
         </div>
+        <h3 class="font-poppins text-lg font-bold text-gray-900">Belum Ada Hasil Analisis</h3>
+        <p class="font-inter text-sm text-gray-400 mt-2 max-w-md mx-auto leading-relaxed">
+          Silakan unggah foto barang bekas Anda pada kotak di atas untuk mendeteksi material dan mendapatkan ide daur ulang kreatif dari AI.
+        </p>
       </section>
 
-      <!-- Product Cards Grid -->
-      <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <FeaturesDashboardProductCard
-          v-for="product in products"
-          :key="product.id"
-          :product="product"
-          @select="openProductDetail"
-        />
-      </section>
+      <!-- Analysis Results Section -->
+      <template v-else>
+        <section class="mb-8 border-t border-gray-100 pt-10">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="text-left">
+              <h2 class="font-poppins text-2xl md:text-3xl font-bold text-gray-950">
+                Hasil Analisis
+              </h2>
+              <p v-if="detectedMaterial" class="font-inter text-sm md:text-base text-gray-500 mt-1.5">
+                Material terdeteksi berbahan: 
+                <span class="text-[#7A4D30] font-bold">{{ detectedMaterial }}</span>
+              </p>
+            </div>
+            <!-- Loader indicator -->
+            <div v-if="isAnalyzing" class="flex items-center gap-2 text-[#7A4D30] text-sm font-semibold">
+              <svg class="animate-spin h-5 w-5 text-[#7A4D30]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+              </svg>
+              AI sedang menganalisis...
+            </div>
+          </div>
+        </section>
+
+        <!-- Product Cards Grid -->
+        <section v-if="products.length > 0" class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <FeaturesDashboardProductCard
+            v-for="product in products"
+            :key="product.id"
+            :product="product"
+            @select="openProductDetail"
+          />
+        </section>
+      </template>
 
     </div>
 
