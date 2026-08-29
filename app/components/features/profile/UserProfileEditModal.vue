@@ -7,6 +7,7 @@ interface UserProfile {
   email: string
   phone: string
   avatar: string
+  avatarFile?: File | null
 }
 
 const props = defineProps<{
@@ -24,6 +25,7 @@ const formLocation = ref('')
 const formEmail = ref('')
 const formPhone = ref('')
 const formAvatar = ref('')
+const selectedAvatarFile = ref<File | null>(null)
 
 // Watch changes to populate form
 watch(() => props.profile, (newVal) => {
@@ -33,6 +35,7 @@ watch(() => props.profile, (newVal) => {
     formEmail.value = newVal.email
     formPhone.value = newVal.phone
     formAvatar.value = newVal.avatar
+    selectedAvatarFile.value = null
   }
 }, { immediate: true })
 
@@ -46,6 +49,7 @@ const onAvatarSelected = (e: Event) => {
   const target = e.target as HTMLInputElement
   if (target.files && target.files[0]) {
     const file = target.files[0]
+    selectedAvatarFile.value = file
     const reader = new FileReader()
     reader.onload = (event) => {
       if (event.target?.result) {
@@ -87,7 +91,8 @@ const handleFormSubmit = () => {
     location: formLocation.value.trim(),
     email: formEmail.value.trim(),
     phone: formPhone.value.trim(),
-    avatar: formAvatar.value
+    avatar: formAvatar.value,
+    avatarFile: selectedAvatarFile.value
   })
 }
 </script>
@@ -130,7 +135,7 @@ const handleFormSubmit = () => {
             <div class="flex items-center gap-4 py-2">
               <div class="relative w-20 h-20 rounded-[20px] overflow-hidden bg-gray-50 border border-gray-150 flex-shrink-0">
                 <img
-                  :src="formAvatar || '/images/landing_page_images/default_pp.webp'"
+                  :src="getAvatarUrl(formAvatar, formName)"
                   alt="Avatar Preview"
                   class="w-full h-full object-cover"
                 />

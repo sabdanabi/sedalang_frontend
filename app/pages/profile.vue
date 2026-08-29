@@ -14,6 +14,9 @@ interface UserProfile {
   phone: string
   avatar: string
   role: string
+  latitude?: number | null
+  longitude?: number | null
+  avatarFile?: File | null
 }
 
 const profile = ref<UserProfile>({
@@ -22,7 +25,9 @@ const profile = ref<UserProfile>({
   email: 'brunojames@gmail.com',
   phone: '+62 812-9753-6492',
   avatar: '/images/landing_page_images/default_pp.webp',
-  role: 'Creative Design'
+  role: 'Creative Design',
+  latitude: null,
+  longitude: null
 })
 
 const showEditModal = ref(false)
@@ -42,12 +47,14 @@ const loadProfile = async () => {
         location: (userData.craftsman as any)?.location || 'Semarang Tengah, Jawa Tengah',
         email: userData.email || '',
         phone: userData.phoneNumber || '',
-        avatar: userData.avatarUrl || '/images/landing_page_images/default_pp.webp',
-        role: 'Pengguna'
+        avatar: getAvatarUrl(userData.avatarUrl, userData.fullName || 'User'),
+        role: 'Pengguna',
+        latitude: (userData.craftsman as any)?.latitude,
+        longitude: (userData.craftsman as any)?.longitude
       }
 
       // Check if user has saved profile edits in local storage
-      const savedProfile = localStorage.getItem('sedalang_user_profile')
+      const savedProfile = localStorage.getItem(`sedalang_user_profile_${userData.id}`)
       if (savedProfile) {
         try {
           const parsed = JSON.parse(savedProfile)
@@ -79,21 +86,26 @@ onMounted(() => {
 
 const saveProfileState = () => {
   if (import.meta.client) {
-    localStorage.setItem('sedalang_user_profile', JSON.stringify(profile.value))
+    const userId = authStore.user?.id || ''
+    localStorage.setItem(`sedalang_user_profile_${userId}`, JSON.stringify(profile.value))
   }
 }
 
-const handleEditSubmit = (updatedData: UserProfile) => {
-  showEditModal.value = false
-  profile.value = {
-    ...profile.value,
-    name: updatedData.name,
-    location: updatedData.location,
-    email: updatedData.email,
-    phone: updatedData.phone,
-    avatar: updatedData.avatar
+const handleEditSubmit = async (updatedData: UserProfile) => {
+  try {
+    await authStore.updateUserProfile({
+      fullName: updatedData.name,
+      phoneNumber: updatedData.phone,
+      avatarFile: updatedData.avatarFile
+    })
+
+    showEditModal.value = false
+    await loadProfile()
+    saveProfileState()
+  } catch (err) {
+    console.error('Failed to update user profile:', err)
+    alert('Gagal memperbarui profil. Silakan coba lagi.')
   }
-  saveProfileState()
 }
 </script>
 
@@ -130,7 +142,11 @@ const handleEditSubmit = (updatedData: UserProfile) => {
 
         <!-- Right: Maplibre GL interactive Map -->
         <div>
-          <FeaturesProfileUserProfileMapSection :location="profile.location" />
+          <FeaturesProfileUserProfileMapSection 
+            :location="profile.location" 
+            :latitude="profile.latitude"
+            :longitude="profile.longitude"
+          />
         </div>
 
       </div>

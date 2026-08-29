@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAuthStore } from '~/stores/auth'
+
 interface UserProfile {
   name: string
   role: string
@@ -13,6 +15,14 @@ defineProps<{
 defineEmits<{
   (e: 'edit'): void
 }>()
+
+const authStore = useAuthStore()
+
+const handleLogout = () => {
+  if (confirm('Apakah Anda yakin ingin keluar?')) {
+    authStore.logout()
+  }
+}
 </script>
 
 <template>
@@ -24,7 +34,7 @@ defineEmits<{
       <div class="relative w-28 h-28 flex-shrink-0 select-none">
         <div class="w-full h-full rounded-[28px] overflow-hidden bg-gray-50 border border-gray-150">
           <img
-            :src="profile.avatar || '/images/landing_page_images/default_pp.webp'"
+            :src="getAvatarUrl(profile.avatar, profile.name)"
             alt="Profile Photo"
             class="w-full h-full object-cover"
           />
@@ -59,8 +69,35 @@ defineEmits<{
           </div>
         </div>
 
-      </div>
     </div>
 
+    <!-- Actions Buttons -->
+    <div class="flex flex-col sm:flex-row gap-3.5 w-full md:w-auto">
+      <!-- Edit Profil Button -->
+      <button
+        type="button"
+        @click="$emit('edit')"
+        class="bg-[#7A4D30] hover:bg-[#683E25] text-white py-2.5 px-6 rounded-full text-xs font-bold font-inter shadow-sm hover:shadow transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none"
+      >
+        Edit Profil
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.83 18.291a8.95 8.95 0 01-3.003 2.008l-2.233.58a.5.5 0 01-.623-.623l.58-2.233a8.95 8.95 0 012.007-3.003l12.07-12.072zm0 0L19.5 7.125" />
+        </svg>
+      </button>
+
+      <!-- Keluar Button -->
+      <button
+        type="button"
+        @click="handleLogout"
+        class="border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-2.5 px-6 rounded-full text-xs font-bold font-inter transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none"
+      >
+        Keluar
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3.004-3-3-3m3 3-3 3m3-3H21" />
+        </svg>
+      </button>
+    </div>
+
+  </div>
   </div>
 </template>

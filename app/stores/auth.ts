@@ -92,13 +92,6 @@ export const useAuthStore = defineStore('auth', () => {
       body: userData
     }) as ApiResponse<AuthResponse>
 
-    token.value = response.data.accessToken
-    user.value = response.data.user
-
-    if (import.meta.client) {
-      localStorage.setItem('sedalang_user_name', response.data.user.fullName)
-    }
-
     return response.data
   }
 
@@ -185,6 +178,44 @@ export const useAuthStore = defineStore('auth', () => {
     return response.data
   }
 
+  // Update general user profile details (name, phone, and avatar file)
+  const updateUserProfile = async (data: { fullName: string; phoneNumber?: string; avatarFile?: File | null }) => {
+    const config = useRuntimeConfig()
+    const baseURL = config.public.apiBase as string
+    
+    let body: any
+    let headers: Record<string, string> = {}
+
+    if (data.avatarFile) {
+      const formData = new FormData()
+      formData.append('fullName', data.fullName)
+      if (data.phoneNumber) {
+        formData.append('phoneNumber', data.phoneNumber)
+      }
+      formData.append('avatar', data.avatarFile)
+      body = formData
+    } else {
+      body = {
+        fullName: data.fullName,
+        phoneNumber: data.phoneNumber || null
+      }
+      headers['Content-Type'] = 'application/json'
+    }
+
+    const response = await $fetch('/api/v1/users/me', {
+      baseURL,
+      method: 'PATCH',
+      body,
+      headers: {
+        ...headers,
+        ...(token.value ? { Authorization: `Bearer ${token.value}` } : {})
+      }
+    }) as ApiResponse<User>
+
+    await getMe()
+    return response.data
+  }
+
   return {
     user,
     token,
@@ -197,6 +228,7 @@ export const useAuthStore = defineStore('auth', () => {
     completeCraftsmanOnboarding,
     skipOnboarding,
     logout,
-    updateCraftsmanProfile
+    updateCraftsmanProfile,
+    updateUserProfile
   }
 })

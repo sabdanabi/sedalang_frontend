@@ -21,18 +21,18 @@ const profilePath = computed(() => {
 })
 
 const userDisplayName = computed(() => {
-  return authStore.user?.fullName || 'Bruno James'
+  return authStore.user?.fullName || ''
 })
 
 const userRoleText = computed(() => {
   if (authStore.user) {
     return authStore.user.role === 'CRAFTSMAN' ? 'Pengrajin' : 'Pengguna'
   }
-  return 'Creative design'
+  return ''
 })
 
 const userAvatar = computed(() => {
-  return authStore.user?.avatarUrl || '/images/landing_page_images/default_pp.webp'
+  return getAvatarUrl(authStore.user?.avatarUrl, authStore.user?.fullName || 'User')
 })
 </script>
 
@@ -116,7 +116,7 @@ const userAvatar = computed(() => {
       </div>
 
       <!-- Right: User profile photo & info (Cari/Edit profile) -->
-      <NuxtLink :to="profilePath" class="flex items-center gap-3 hover:opacity-90 focus:outline-none select-none">
+      <NuxtLink v-if="authStore.user" :to="profilePath" class="flex items-center gap-3 hover:opacity-90 focus:outline-none select-none">
         <img
           :src="userAvatar"
           :alt="userDisplayName + ' avatar'"
@@ -127,6 +127,13 @@ const userAvatar = computed(() => {
           <span class="text-[11px] text-gray-400 mt-1 font-medium leading-none">{{ userRoleText }}</span>
         </div>
       </NuxtLink>
+      <div v-else class="flex items-center gap-3 animate-pulse">
+        <div class="w-10 h-10 bg-gray-200 rounded-full"></div>
+        <div class="hidden sm:flex flex-col gap-1.5 text-left">
+          <div class="w-24 h-3 bg-gray-200 rounded"></div>
+          <div class="w-16 h-2 bg-gray-200 rounded"></div>
+        </div>
+      </div>
 
     </div>
   </header>

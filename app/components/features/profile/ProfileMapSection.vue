@@ -9,6 +9,8 @@ maplibregl.setWorkerUrl(workerUrl)
 
 const props = defineProps<{
   location?: string
+  latitude?: number | null
+  longitude?: number | null
 }>()
 
 const mapContainer = ref<HTMLElement | null>(null)
@@ -39,7 +41,18 @@ const getCoordsFromLocation = (locStr: string): [number, number] => {
 }
 
 const updateCoordsFromProp = () => {
-  if (props.location) {
+  if (props.latitude != null && props.longitude != null) {
+    const coords: [number, number] = [Number(props.longitude), Number(props.latitude)]
+    currentCoords.value = coords
+    if (mapInstance && markerInstance) {
+      mapInstance.flyTo({
+        center: coords,
+        zoom: 14,
+        essential: true
+      })
+      markerInstance.setLngLat(coords)
+    }
+  } else if (props.location) {
     const coords = getCoordsFromLocation(props.location)
     currentCoords.value = coords
     if (mapInstance && markerInstance) {
@@ -53,7 +66,7 @@ const updateCoordsFromProp = () => {
   }
 }
 
-watch(() => props.location, () => {
+watch([() => props.location, () => props.latitude, () => props.longitude], () => {
   updateCoordsFromProp()
 }, { immediate: true })
 

@@ -8,6 +8,7 @@ interface ProfileData {
   projectsCount: number
   avatar: string
   skills: string[]
+  avatarFile?: File | null
 }
 
 const props = defineProps<{
@@ -27,6 +28,7 @@ const formProjects = ref(0)
 const formAvatar = ref('')
 const formSkills = ref<string[]>([])
 const newSkillInput = ref('')
+const selectedAvatarFile = ref<File | null>(null)
 
 // Watch changes to populate form
 watch(() => props.profile, (newVal) => {
@@ -37,6 +39,7 @@ watch(() => props.profile, (newVal) => {
     formProjects.value = newVal.projectsCount
     formAvatar.value = newVal.avatar
     formSkills.value = [...(newVal.skills || [])]
+    selectedAvatarFile.value = null
   }
 }, { immediate: true })
 
@@ -50,6 +53,7 @@ const onAvatarSelected = (e: Event) => {
   const target = e.target as HTMLInputElement
   if (target.files && target.files[0]) {
     const file = target.files[0]
+    selectedAvatarFile.value = file
     const reader = new FileReader()
     reader.onload = (event) => {
       if (event.target?.result) {
@@ -107,7 +111,8 @@ const handleFormSubmit = () => {
     location: formLocation.value.trim(),
     projectsCount: Number(formProjects.value) || 0,
     avatar: formAvatar.value,
-    skills: formSkills.value
+    skills: formSkills.value,
+    avatarFile: selectedAvatarFile.value
   })
 }
 </script>
@@ -150,7 +155,7 @@ const handleFormSubmit = () => {
             <div class="flex items-center gap-4 py-2">
               <div class="relative w-20 h-20 rounded-[20px] overflow-hidden bg-gray-50 border border-gray-150 flex-shrink-0">
                 <img
-                  :src="formAvatar || '/images/landing_page_images/default_pp.webp'"
+                  :src="getAvatarUrl(formAvatar, formName)"
                   alt="Avatar Preview"
                   class="w-full h-full object-cover"
                 />

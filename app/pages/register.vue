@@ -16,6 +16,11 @@ const isLoading = ref(false)
 const errorMsg = ref('')
 
 const handleRegister = async () => {
+  if (password.value.length < 8) {
+    errorMsg.value = 'Password harus terdiri dari minimal 8 karakter.'
+    return
+  }
+
   isLoading.value = true
   errorMsg.value = ''
   try {
@@ -25,9 +30,23 @@ const handleRegister = async () => {
       fullName: name.value,
       phoneNumber: phone.value
     })
-    navigateTo('/onboarding')
+    if (import.meta.client) {
+      localStorage.setItem('sedalang_new_register', 'true')
+    }
+    navigateTo('/login?registered=true')
   } catch (err: any) {
-    errorMsg.value = err.data?.message || 'Registrasi gagal. Silakan coba lagi.'
+    if (err.data?.errors && Array.isArray(err.data.errors) && err.data.errors.length > 0) {
+      errorMsg.value = err.data.errors
+        .map((e: string) => {
+          if (e.includes('email must be an email')) return 'Format email tidak valid.'
+          if (e.includes('longer than or equal to 8 characters')) return 'Password harus terdiri dari minimal 8 karakter.'
+          if (e.includes('fullName should not be empty')) return 'Nama lengkap tidak boleh kosong.'
+          return e
+        })
+        .join(' ')
+    } else {
+      errorMsg.value = err.data?.message || 'Registrasi gagal. Silakan coba lagi.'
+    }
   } finally {
     isLoading.value = false
   }

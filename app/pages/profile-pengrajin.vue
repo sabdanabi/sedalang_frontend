@@ -16,6 +16,9 @@ interface ProfileData {
   projectsCount: number
   avatar: string
   skills: string[]
+  latitude?: number | null
+  longitude?: number | null
+  avatarFile?: File | null
 }
 
 interface WorkItem {
@@ -41,7 +44,9 @@ const profile = ref<ProfileData>({
     'Dekorasi Rumah',
     'Lampu Dekoratif',
     'Upcycling'
-  ]
+  ],
+  latitude: null,
+  longitude: null
 })
 
 const works = ref<WorkItem[]>([])
@@ -62,14 +67,16 @@ const loadProfile = async () => {
         location: craftsman?.location || 'Semarang Tengah, Jawa Tengah',
         rating: craftsman?.rating || 4.9,
         projectsCount: craftsman?.projectsCount || 24,
-        avatar: userData.avatarUrl || '/images/landing_page_images/default_pp.webp',
+        avatar: getAvatarUrl(userData.avatarUrl, userData.fullName || 'User'),
         skills: typeof craftsman?.skills === 'string'
           ? craftsman.skills.split(',').map((s: string) => s.trim()).filter(Boolean)
-          : (Array.isArray(craftsman?.skills) ? craftsman.skills : [])
+          : (Array.isArray(craftsman?.skills) ? craftsman.skills : []),
+        latitude: craftsman?.latitude,
+        longitude: craftsman?.longitude
       }
 
       // Check if artisan profile is also saved in localStorage to merge local edits
-      const savedProfile = localStorage.getItem('sedalang_artisan_profile')
+      const savedProfile = localStorage.getItem(`sedalang_artisan_profile_${userData.id}`)
       if (savedProfile) {
         try {
           const parsed = JSON.parse(savedProfile)
@@ -117,7 +124,7 @@ const loadProfile = async () => {
         }
       } else {
         // Fallback to local storage if available, otherwise empty to remove dummy data
-        const savedWorks = localStorage.getItem('sedalang_artisan_works')
+        const savedWorks = localStorage.getItem(`sedalang_artisan_works_${userData.id}`)
         if (savedWorks) {
           try {
             works.value = JSON.parse(savedWorks)
@@ -151,13 +158,15 @@ onMounted(() => {
 // Save profile state
 const saveProfileState = () => {
   if (import.meta.client) {
-    localStorage.setItem('sedalang_artisan_profile', JSON.stringify(profile.value))
+    const userId = authStore.user?.id || ''
+    localStorage.setItem(`sedalang_artisan_profile_${userId}`, JSON.stringify(profile.value))
   }
 }
 
 const saveWorksState = () => {
   if (import.meta.client) {
-    localStorage.setItem('sedalang_artisan_works', JSON.stringify(works.value))
+    const userId = authStore.user?.id || ''
+    localStorage.setItem(`sedalang_artisan_works_${userId}`, JSON.stringify(works.value))
   }
 }
 
@@ -170,6 +179,13 @@ const selectedWork = ref<WorkItem | null>(null)
 // Action Handlers
 const handleEditProfileSubmit = async (updatedData: ProfileData) => {
   try {
+    // 1. Update general user details (name and avatar)
+    await authStore.updateUserProfile({
+      fullName: updatedData.name,
+      avatarFile: updatedData.avatarFile
+    })
+
+    // 2. Update craftsman workshop details
     await authStore.updateCraftsmanProfile({
       location: updatedData.location,
       craftType: updatedData.description,
@@ -177,15 +193,7 @@ const handleEditProfileSubmit = async (updatedData: ProfileData) => {
     })
 
     showEditModal.value = false
-    profile.value = {
-      ...profile.value,
-      name: updatedData.name,
-      description: updatedData.description,
-      location: updatedData.location,
-      projectsCount: updatedData.projectsCount,
-      avatar: updatedData.avatar,
-      skills: updatedData.skills
-    }
+    await loadProfile()
     saveProfileState()
   } catch (err) {
     console.error('Failed to update craftsman profile:', err)
@@ -237,7 +245,11 @@ const handleViewWorkDetail = (item: WorkItem) => {
       />
 
       <!-- Location and Interactive Maplibre map section -->
-      <FeaturesProfileMapSection :location="profile.location" />
+      <FeaturesProfileMapSection 
+        :location="profile.location" 
+        :latitude="profile.latitude"
+        :longitude="profile.longitude"
+      />
 
       <!-- Portfolio works gallery grid -->
       <FeaturesProfilePortfolioGrid

@@ -1,24 +1,48 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
   layout: 'auth'
 })
 
+const route = useRoute()
 const authStore = useAuthStore()
 
 const email = ref('')
 const password = ref('')
 const isLoading = ref(false)
 const errorMsg = ref('')
+const showSuccessMsg = ref(route.query.registered === 'true')
 
 const handleLogin = async () => {
+  showSuccessMsg.value = false
   isLoading.value = true
   errorMsg.value = ''
   try {
     await authStore.login({ email: email.value, password: password.value })
-    navigateTo('/onboarding')
+    
+    // Check onboarding status
+    const user = authStore.user
+    if (user) {
+      if (user.role === 'CRAFTSMAN') {
+        localStorage.setItem('sedalang_onboarding_completed', 'true')
+        navigateTo('/dashboard-aiPage')
+      } else {
+        // If role is USER, check if they are a newly registered user on this device
+        const isNewRegister = localStorage.getItem('sedalang_new_register') === 'true'
+        if (isNewRegister) {
+          localStorage.removeItem('sedalang_new_register')
+          navigateTo('/onboarding')
+        } else {
+          localStorage.setItem('sedalang_onboarding_completed', 'true')
+          navigateTo('/dashboard-aiPage')
+        }
+      }
+    } else {
+      navigateTo('/onboarding')
+    }
   } catch (err: any) {
     errorMsg.value = err.data?.message || 'Email atau password salah. Silakan coba lagi.'
   } finally {
@@ -38,6 +62,14 @@ const handleLogin = async () => {
         Masuk ke akun Anda sekarang
       </p>
     </header>
+
+    <!-- Success Banner -->
+    <div v-if="showSuccessMsg" class="mb-5 p-3.5 rounded-[12px] bg-green-50 border border-green-100 text-green-600 text-xs font-semibold font-inter animate-fade-in flex items-center gap-2.5">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 shrink-0">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+      </svg>
+      <span>Registrasi berhasil! Silakan masuk dengan akun baru Anda.</span>
+    </div>
 
     <!-- Error Banner -->
     <div v-if="errorMsg" class="mb-5 p-3.5 rounded-[12px] bg-red-50 border border-red-100 text-red-600 text-xs font-semibold font-inter animate-fade-in flex items-center gap-2.5">
