@@ -1,26 +1,43 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useAIStore } from '~/stores/ai'
+import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
   layout: 'dashboard'
 })
 
-// User profile state
-const userName = ref('Bruno')
+const aiStore = useAIStore()
+const authStore = useAuthStore()
+
+// User profile state derived from authStore
+const userName = computed(() => {
+  return authStore.user?.fullName?.split(' ')[0] || 'User'
+})
+
 const isAnalyzing = ref(false)
 const detectedMaterial = ref('Plastik')
 const showModal = ref(false)
 const selectedProduct = ref<Product | null>(null)
 
 // Onboarding verification check
-onMounted(() => {
+onMounted(async () => {
   if (import.meta.client) {
     const completed = localStorage.getItem('sedalang_onboarding_completed')
     if (!completed) {
       navigateTo('/onboarding')
-    } else {
-      userName.value = localStorage.getItem('sedalang_user_name') || 'Bruno'
+      return
     }
+
+    if (!authStore.user) {
+      try {
+        await authStore.getMe()
+      } catch (err) {
+        console.error('Error fetching user data:', err)
+      }
+    }
+
+    await loadAILearning()
   }
 })
 
@@ -193,68 +210,83 @@ const defaultProducts: Product[] = [
 
 const products = ref<Product[]>(defaultProducts)
 
-// AI prompt history state
-interface HistoryItem {
-  id: string
-  promptText: string
-  previewImage: string | null
-  detectedMaterial: string
-  products: Product[]
+const mapIdeaToProduct = (idea: any, materialName: string): Product => {
+  return {
+    id: idea.id,
+    title: idea.ideaTitle || 'Ide Daur Ulang',
+    subtitle: idea.description || 'Deskripsi ide',
+    description: idea.description || 'Deskripsi ide',
+    detailDescription: idea.description || 'Deskripsi ide',
+    tools: (idea.toolsNeeded || []).map((tool: string) => ({
+      name: tool,
+      icon: '🛠'
+    })),
+    materials: idea.materialsNeeded || [],
+    skills: (idea.craftsmanSkills || []).map((skill: string) => ({
+      name: skill,
+      icon: '♻',
+      desc: skill,
+      color: 'bg-[#F2FAF3] text-[#2D7A41] border-[#D6EFE0]'
+    })),
+    steps: (idea.steps || []).map((stepDesc: string, idx: number) => ({
+      title: `Langkah ${idx + 1}`,
+      desc: stepDesc
+    })),
+    image: idea.imageUrl || '/images/default_images/default_img.webp',
+    materialType: materialName
+  }
 }
 
-const history = ref<HistoryItem[]>([])
+// Map real API history records to history items expected by the UI
+const history = computed(() => {
+  return aiStore.historyList.map(record => {
+    return {
+      id: record.id,
+      promptText: record.detectedMaterial,
+      previewImage: record.rawImageUrl,
+      detectedMaterial: record.detectedMaterial,
+      products: record.ideas.map(idea => mapIdeaToProduct(idea, record.detectedMaterial))
+    }
+  })
+})
 
-const recallHistoryItem = (item: HistoryItem) => {
+const recallHistoryItem = (item: any) => {
   detectedMaterial.value = item.detectedMaterial
   products.value = [...item.products]
 }
 
-// Simulated AI search / send prompt
-const handlePromptSubmit = (data: { promptText: string; selectedFile: File | null; previewImage: string | null }) => {
-  isAnalyzing.value = true
-
-  // Simulate AI processing delay
-  setTimeout(() => {
-    isAnalyzing.value = false
-    
-    // Determine detected material dynamically based on image or text prompt
-    const contentText = (data.promptText + (data.selectedFile?.name || '')).toLowerCase()
-    
-    if (contentText.includes('kaleng') || contentText.includes('seng') || contentText.includes('besi') || contentText.includes('logam') || contentText.includes('can')) {
-      detectedMaterial.value = 'Logam'
-      // Reorder products to put metal first
-      products.value = [
-        defaultProducts[0],
-        defaultProducts[1],
-        defaultProducts[2]
-      ]
-    } else if (contentText.includes('jeans') || contentText.includes('baju') || contentText.includes('kain') || contentText.includes('denim') || contentText.includes('perca') || contentText.includes('tas')) {
-      detectedMaterial.value = 'Kain Perca / Tekstil'
-      // Reorder products to put textile first
-      products.value = [
-        defaultProducts[2],
-        defaultProducts[1],
-        defaultProducts[0]
-      ]
-    } else {
-      detectedMaterial.value = 'Plastik'
-      // Reorder products to put plastic/glass first
-      products.value = [
-        defaultProducts[1],
-        defaultProducts[0],
-        defaultProducts[2]
-      ]
+// Load history and automatically show the latest result on page load
+const loadAILearning = async () => {
+  try {
+    const hist = await aiStore.getHistory()
+    if (hist && hist.length > 0) {
+      const latest = hist[0]
+      detectedMaterial.value = latest.detectedMaterial
+      products.value = latest.ideas.map(idea => mapIdeaToProduct(idea, latest.detectedMaterial))
     }
+  } catch (err) {
+    console.error('Error loading AI history:', err)
+  }
+}
 
-    // Capture in history
-    history.value.unshift({
-      id: Date.now().toString(),
-      promptText: data.promptText.trim() || (data.selectedFile ? `Foto: ${data.selectedFile.name}` : 'Tanya AI'),
-      previewImage: data.previewImage,
-      detectedMaterial: detectedMaterial.value,
-      products: [...products.value]
-    })
-  }, 1200)
+// Call backend API to analyze image
+const handlePromptSubmit = async (data: { promptText: string; selectedFile: File | null; previewImage: string | null }) => {
+  if (!data.selectedFile) {
+    alert('Silakan unggah foto barang bekas terlebih dahulu untuk dianalisis oleh AI.')
+    return
+  }
+
+  isAnalyzing.value = true
+  try {
+    const record = await aiStore.analyzeIdeas(data.selectedFile)
+    detectedMaterial.value = record.detectedMaterial
+    products.value = record.ideas.map(idea => mapIdeaToProduct(idea, record.detectedMaterial))
+  } catch (err) {
+    console.error('AI Analysis failed:', err)
+    alert('Gagal menganalisis gambar. Pastikan Anda mengunggah berkas gambar yang valid.')
+  } finally {
+    isAnalyzing.value = false
+  }
 }
 
 // Open Detail Popup
