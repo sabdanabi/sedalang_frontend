@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCraftsmanStore } from '~/stores/craftsman'
+import { useApi } from '~/composables/useApiFetch'
 
 const route = useRoute()
 const craftsmanStore = useCraftsmanStore()
@@ -10,6 +11,7 @@ const craftsmanStore = useCraftsmanStore()
 const defaultImg = '/images/default_images/default_img.webp'
 
 const ideaId = ref<string | null>(null)
+const isFallback = ref(false)
 
 // Proxy matching store values to UI mapped craftsman structure
 const craftsmen = computed(() => {
@@ -27,7 +29,7 @@ const craftsmen = computed(() => {
 
     return {
       id: c.id,
-      name: c.user?.fullName || 'Pengrajin',
+      name: c.user?.fullName || c.fullName || 'Pengrajin',
       location: c.location || 'Semarang Tengah',
       category: c.craftType || 'Pengrajin Kreatif',
       rating: c.averageRating || 5.0,
@@ -35,7 +37,7 @@ const craftsmen = computed(() => {
       badges: c.skills || [],
       mainImage: rawPortfolio.length > 0 ? rawPortfolio[0] : defaultImg,
       portfolio,
-      avatarUrl: c.user?.avatarUrl
+      avatarUrl: c.user?.avatarUrl || c.avatarUrl || null
     }
   })
 })
@@ -53,6 +55,18 @@ onMounted(async () => {
       ideaId.value = queryId
       try {
         await craftsmanStore.getMatchedCraftsmen(queryId)
+        
+        // If matched list is empty, load general recommended list as fallback
+        if (craftsmanStore.matchedCraftsmen.length === 0) {
+          console.log('No matched craftsmen. Loading general list as fallback...')
+          const api = useApi()
+          const res = await api('/api/v1/craftsmen?page=1&limit=6') as any
+          if (res?.data?.data) {
+            craftsmanStore.matchedCraftsmen = res.data.data
+            isFallback.value = true
+          }
+        }
+
         if (craftsmen.value.length > 0) {
           currentIndex.value = Math.min(1, craftsmen.value.length - 1)
         } else {
@@ -86,7 +100,9 @@ const goToProfile = (craftsmanId: string | number) => {
 }
 
 const goToChat = (craftsmanName: string) => {
-  const c = craftsmanStore.matchedCraftsmen.find(item => item.user?.fullName === craftsmanName)
+  const c = craftsmanStore.matchedCraftsmen.find(item => 
+    (item.user?.fullName || item.fullName || '') === craftsmanName
+  )
   if (c) {
     navigateTo(`/chat?craftsmanId=${c.id}&ideaId=${ideaId.value || ''}&craftsmanName=${encodeURIComponent(craftsmanName)}`)
   } else {
@@ -114,7 +130,10 @@ const getPositionIndex = (index: number) => {
         <h2 class="font-poppins text-3xl sm:text-4xl font-semibold tracking-tight text-gray-950">
           Memilih Opsi <span class="text-[#7A4D30]">Pengrajin</span> Berikut
         </h2>
-        <p class="font-inter text-sm sm:text-base text-gray-500 mt-3">
+        <p v-if="isFallback" class="font-inter text-xs text-amber-700 bg-amber-50 border border-amber-200 px-4 py-2.5 rounded-full inline-block mt-3 font-semibold">
+          💡 Tidak ada pengrajin dengan keahlian yang spesifik, menampilkan rekomendasi pengrajin umum.
+        </p>
+        <p v-else class="font-inter text-sm sm:text-base text-gray-500 mt-3">
           Pilihlah pengrajin terbaik yang sesuai dengan kebutuhanmu
         </p>
       </div>
