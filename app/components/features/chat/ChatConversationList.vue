@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import type { ChatRoom } from '~/stores/chat'
 import { getAvatarUrl } from '~/composables/useAvatar'
@@ -16,10 +16,38 @@ const emit = defineEmits<{
 const searchQuery = ref('')
 const authStore = useAuthStore()
 
+// Filter search query and deduplicate conversations by partner ID
+const filteredRooms = computed(() => {
+  const seenPartners = new Set<string>()
+  const result: ChatRoom[] = []
+  const loggedInUserId = authStore.user?.id
+
+  for (const room of props.rooms) {
+    const isCustomer = room.userId === loggedInUserId
+    const partnerId = isCustomer 
+      ? (room.craftsmanId || room.craftsman?.id || '') 
+      : (room.userId || room.user?.id || '')
+
+    // Apply search filter if query exists
+    if (searchQuery.value.trim()) {
+      const partnerName = getPartnerName(room).toLowerCase()
+      if (!partnerName.includes(searchQuery.value.trim().toLowerCase())) {
+        continue
+      }
+    }
+
+    if (!seenPartners.has(partnerId)) {
+      seenPartners.add(partnerId)
+      result.push(room)
+    }
+  }
+  return result
+})
+
 // Helper functions for dynamic room details
 const getPartnerName = (room: ChatRoom) => {
-  const isUser = authStore.user?.role === 'USER'
-  if (isUser) {
+  const isCustomer = room.userId === authStore.user?.id
+  if (isCustomer) {
     return room.craftsman?.user?.fullName || 'Pengrajin'
   } else {
     return room.user?.fullName || 'Pengguna'
@@ -27,17 +55,17 @@ const getPartnerName = (room: ChatRoom) => {
 }
 
 const getPartnerAvatar = (room: ChatRoom) => {
-  const isUser = authStore.user?.role === 'USER'
-  const rawUrl = isUser ? room.craftsman?.user?.avatarUrl : room.user?.avatarUrl
-  const rawName = isUser 
+  const isCustomer = room.userId === authStore.user?.id
+  const rawUrl = isCustomer ? room.craftsman?.user?.avatarUrl : room.user?.avatarUrl
+  const rawName = isCustomer 
     ? (room.craftsman?.user?.fullName || 'Pengrajin') 
     : (room.user?.fullName || 'Pengguna')
   return getAvatarUrl(rawUrl, rawName)
 }
 
 const getPartnerSubtitle = (room: ChatRoom) => {
-  const isUser = authStore.user?.role === 'USER'
-  if (isUser) {
+  const isCustomer = room.userId === authStore.user?.id
+  if (isCustomer) {
     return `${room.craftsman?.craftType || 'Kerajinan'} • Online`
   } else {
     return 'Pemilik Limbah • Online'
@@ -78,7 +106,7 @@ const formatRoomTime = (dateStr?: string) => {
     <!-- Rooms List -->
     <div class="flex-grow overflow-y-auto space-y-3 pr-1">
       <div
-        v-for="room in rooms"
+        v-for="room in filteredRooms"
         :key="room.id"
         @click="$emit('select-room', room)"
         class="flex gap-4 p-4 rounded-2xl border transition-all duration-200 cursor-pointer text-left select-none relative"
@@ -135,7 +163,7 @@ const formatRoomTime = (dateStr?: string) => {
       </div>
 
       <!-- Empty State -->
-      <div v-if="rooms.length === 0" class="py-12 text-center">
+      <div v-if="filteredRooms.length === 0" class="py-12 text-center">
         <p class="text-xs text-gray-400 font-inter">Belum ada obrolan aktif</p>
       </div>
     </div>

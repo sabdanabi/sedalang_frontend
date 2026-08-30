@@ -49,9 +49,21 @@ onMounted(async () => {
 
     if (craftsmanId && ideaId) {
       try {
-        const room = await chatStore.createOrGetRoom(craftsmanId, ideaId)
-        chatStore.joinRoom(room.id)
-        await chatStore.fetchMessages(room.id)
+        const existingRoom = chatStore.rooms.find(r => r.craftsmanId === craftsmanId || r.craftsman?.id === craftsmanId)
+        if (existingRoom) {
+          // Move existing conversation to the top of the sidebar list
+          const index = chatStore.rooms.findIndex(r => r.id === existingRoom.id)
+          if (index > 0) {
+            chatStore.rooms.splice(index, 1)
+            chatStore.rooms.unshift(existingRoom)
+          }
+          chatStore.joinRoom(existingRoom.id)
+          await chatStore.fetchMessages(existingRoom.id)
+        } else {
+          const room = await chatStore.createOrGetRoom(craftsmanId, ideaId)
+          chatStore.joinRoom(room.id)
+          await chatStore.fetchMessages(room.id)
+        }
       } catch (err) {
         console.error('Failed to auto-initiate chat room:', err)
       }

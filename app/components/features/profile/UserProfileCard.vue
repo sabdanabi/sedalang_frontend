@@ -26,7 +26,7 @@ const handleLogout = () => {
 </script>
 
 <template>
-  <div class="bg-[#FAF8F5]/80 border border-[#FAF8F5] rounded-[32px] p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 text-left">
+  <div class="bg-[#FAF8F5]/80 border border-[#FAF8F5] rounded-[32px] p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 text-left">
     
     <div class="flex flex-col sm:flex-row items-center gap-6">
       
@@ -68,11 +68,12 @@ const handleLogout = () => {
             {{ profile.location }}
           </div>
         </div>
+      </div>
 
     </div>
 
     <!-- Actions Buttons -->
-    <div class="flex flex-col sm:flex-row gap-3.5 w-full md:w-auto">
+    <div class="flex flex-row gap-3.5 w-full md:w-auto justify-end items-center md:ml-auto">
       <!-- Edit Profil Button -->
       <button
         type="button"
@@ -98,6 +99,5 @@ const handleLogout = () => {
       </button>
     </div>
 
-  </div>
   </div>
 </template>

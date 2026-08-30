@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { useChatStore, type ChatRoom } from '~/stores/chat'
 import { getAvatarUrl } from '~/composables/useAvatar'
@@ -65,35 +65,39 @@ const onFileSelected = (event: Event) => {
   }
 }
 
+// Computed: Partner info helper to resolve role-independent names and avatars
+const partnerInfo = computed(() => {
+  if (!props.room) return null
+
+  const loggedInUserId = authStore.user?.id
+  const isCustomer = props.room.userId === loggedInUserId
+
+  if (isCustomer) {
+    return {
+      name: props.room.craftsman?.user?.fullName || 'Pengrajin',
+      avatar: props.room.craftsman?.user?.avatarUrl || null,
+      subtitle: `${props.room.craftsman?.craftType || 'Kerajinan'} • Online`
+    }
+  } else {
+    return {
+      name: props.room.user?.fullName || 'Pengguna',
+      avatar: props.room.user?.avatarUrl || null,
+      subtitle: 'Pemilik Limbah • Online'
+    }
+  }
+})
+
 // Helper methods for dynamic layout
 const getPartnerName = () => {
-  if (!props.room) return ''
-  const isUser = authStore.user?.role === 'USER'
-  if (isUser) {
-    return props.room.craftsman?.user?.fullName || 'Pengrajin'
-  } else {
-    return props.room.user?.fullName || 'Pengguna'
-  }
+  return partnerInfo.value?.name || ''
 }
 
 const getPartnerAvatar = () => {
-  if (!props.room) return '/images/landing_page_images/default_pp.webp'
-  const isUser = authStore.user?.role === 'USER'
-  const rawUrl = isUser ? props.room.craftsman?.user?.avatarUrl : props.room.user?.avatarUrl
-  const rawName = isUser 
-    ? (props.room.craftsman?.user?.fullName || 'Pengrajin') 
-    : (props.room.user?.fullName || 'Pengguna')
-  return getAvatarUrl(rawUrl, rawName)
+  return getAvatarUrl(partnerInfo.value?.avatar || null, partnerInfo.value?.name || 'Pengguna')
 }
 
 const getPartnerSubtitle = () => {
-  if (!props.room) return ''
-  const isUser = authStore.user?.role === 'USER'
-  if (isUser) {
-    return `${props.room.craftsman?.craftType || 'Kerajinan'} • Online`
-  } else {
-    return 'Pemilik Limbah • Online'
-  }
+  return partnerInfo.value?.subtitle || ''
 }
 
 const isOutgoing = (item: any) => {

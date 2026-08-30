@@ -17,7 +17,7 @@ defineProps<{
 }>()
 
 defineEmits<{
-  (e: 'select-craftsman', name: string): void
+  (e: 'select-craftsman', id: string, name: string): void
   (e: 'view-profile', id: string): void
 }>()
 </script>
@@ -120,7 +120,7 @@ defineEmits<{
       <!-- Pilih Pengrajin Button -->
       <button
         type="button"
-        @click="$emit('select-craftsman', craftsman.name)"
+        @click="$emit('select-craftsman', craftsman.id, craftsman.name)"
         class="w-full bg-[#7A4D30] hover:bg-[#683E25] text-white py-2.5 rounded-full text-xs font-bold font-inter shadow-sm hover:shadow transition-all duration-300 flex items-center justify-center gap-1 cursor-pointer focus:outline-none"
       >
         Pilih Pengrajin

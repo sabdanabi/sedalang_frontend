@@ -10,9 +10,7 @@ defineProps<{
   profile: UserProfile
 }>()
 
-defineEmits<{
-  (e: 'edit'): void
-}>()
+
 </script>
 
 <template>
@@ -22,24 +20,12 @@ defineEmits<{
     <div class="flex items-center justify-between">
       <div>
         <h3 class="font-poppins text-lg md:text-xl font-bold text-gray-950">
-          Informasi Pengrajin
+          Informasi Pengguna
         </h3>
         <p class="font-inter text-xs text-gray-400 mt-1">
-          Berikut adalah data pengrajin yang tersedia
+          Berikut adalah data pengguna yang tersedia
         </p>
       </div>
-
-      <!-- Edit Trigger -->
-      <button
-        type="button"
-        @click="$emit('edit')"
-        class="text-[#7A4D30] hover:text-[#683E25] font-bold text-xs font-inter flex items-center gap-1.5 cursor-pointer focus:outline-none"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.83 18.291a8.95 8.95 0 01-3.003 2.008l-2.233.58a.5.5 0 01-.623-.623l.58-2.233a8.95 8.95 0 012.007-3.003l12.07-12.072zm0 0L19.5 7.125" />
-        </svg>
-        Edit
-      </button>
     </div>
 
     <!-- Read-only Fields -->

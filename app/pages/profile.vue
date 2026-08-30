@@ -136,7 +136,6 @@ const handleEditSubmit = async (updatedData: UserProfile) => {
         <div>
           <FeaturesProfileUserProfileInfoSection
             :profile="profile"
-            @edit="showEditModal = true"
           />
         </div>
 
