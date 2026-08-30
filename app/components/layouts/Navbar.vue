@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useAuthStore } from '~/stores/auth'
 
 const isMobileMenuOpen = ref(false)
+const authStore = useAuthStore()
 
 const navLinks = [
   { name: 'Home', path: '/', active: true },
@@ -44,18 +46,28 @@ const toggleMobileMenu = () => {
 
         <!-- Right: Desktop Auth Buttons -->
         <div class="hidden md:flex items-center gap-4 font-inter">
-          <NuxtLink
-            to="/login"
-            class="px-6 py-2.5 border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 text-sm font-medium rounded-full transition-all duration-200 font-inter"
-          >
-            Login
-          </NuxtLink>
-          <NuxtLink
-            to="/register"
-            class="px-6 py-2.5 bg-[#7A4D30] hover:bg-[#6A3F25] text-white text-sm font-medium rounded-full transition-all duration-200 shadow-sm hover:shadow active:scale-[0.98] font-inter"
-          >
-            Sign up
-          </NuxtLink>
+          <template v-if="authStore.isAuthenticated">
+            <NuxtLink
+              to="/dashboard-aiPage"
+              class="px-6 py-2.5 bg-[#7A4D30] hover:bg-[#6A3F25] text-white text-sm font-medium rounded-full transition-all duration-200 shadow-sm hover:shadow active:scale-[0.98] font-inter"
+            >
+              Dashboard
+            </NuxtLink>
+          </template>
+          <template v-else>
+            <NuxtLink
+              to="/login"
+              class="px-6 py-2.5 border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 text-sm font-medium rounded-full transition-all duration-200 font-inter"
+            >
+              Login
+            </NuxtLink>
+            <NuxtLink
+              to="/register"
+              class="px-6 py-2.5 bg-[#7A4D30] hover:bg-[#6A3F25] text-white text-sm font-medium rounded-full transition-all duration-200 shadow-sm hover:shadow active:scale-[0.98] font-inter"
+            >
+              Sign up
+            </NuxtLink>
+          </template>
         </div>
 
         <!-- Mobile Hamburger Button -->
@@ -124,20 +136,31 @@ const toggleMobileMenu = () => {
           </NuxtLink>
           
           <div class="pt-4 border-t border-gray-100 mt-4 flex flex-col gap-3">
-            <NuxtLink
-              to="/login"
-              class="w-full text-center px-4 py-2.5 border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 text-base font-medium rounded-full transition-all duration-200"
-              @click="isMobileMenuOpen = false"
-            >
-              Login
-            </NuxtLink>
-            <NuxtLink
-              to="/register"
-              class="w-full text-center px-4 py-2.5 bg-[#7A4D30] hover:bg-[#6A3F25] text-white text-base font-medium rounded-full transition-all duration-200 shadow-sm"
-              @click="isMobileMenuOpen = false"
-            >
-              Sign up
-            </NuxtLink>
+            <template v-if="authStore.isAuthenticated">
+              <NuxtLink
+                to="/dashboard-aiPage"
+                class="w-full text-center px-4 py-2.5 bg-[#7A4D30] hover:bg-[#6A3F25] text-white text-base font-medium rounded-full transition-all duration-200 shadow-sm"
+                @click="isMobileMenuOpen = false"
+              >
+                Dashboard
+              </NuxtLink>
+            </template>
+            <template v-else>
+              <NuxtLink
+                to="/login"
+                class="w-full text-center px-4 py-2.5 border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 text-base font-medium rounded-full transition-all duration-200"
+                @click="isMobileMenuOpen = false"
+              >
+                Login
+              </NuxtLink>
+              <NuxtLink
+                to="/register"
+                class="w-full text-center px-4 py-2.5 bg-[#7A4D30] hover:bg-[#6A3F25] text-white text-base font-medium rounded-full transition-all duration-200 shadow-sm"
+                @click="isMobileMenuOpen = false"
+              >
+                Sign up
+              </NuxtLink>
+            </template>
           </div>
         </div>
       </div>
