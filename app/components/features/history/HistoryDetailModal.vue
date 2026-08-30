@@ -1,20 +1,8 @@
 <script setup lang="ts">
-interface Order {
-  id: string
-  date: string
-  status: string
-  productName: string
-  artisan: string
-  material: string
-  shipping: string
-  price: string
-  totalItem: string
-  totalPrice: string
-  payment: string
-  image: string
-}
+import { computed } from 'vue'
+import type { Order } from '~/stores/orders'
 
-defineProps<{
+const props = defineProps<{
   show: boolean
   order: Order | null
 }>()
@@ -22,6 +10,24 @@ defineProps<{
 defineEmits<{
   (e: 'close'): void
 }>()
+
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+const productName = computed(() => props.order?.proposal?.productName || '-')
+const artisanName = computed(() => props.order?.craftsman?.user?.fullName || 'Pengrajin')
+const materialsList = computed(() => (props.order?.proposal?.materialsNeeded || []).join(', ') || '-')
+const shippingLabel = computed(() => {
+  const m = props.order?.proposal?.deliveryMethod
+  if (m === 'GOSEND') return 'GoSend dari pengrajin'
+  if (m === 'DROP_OFF') return 'Ambil Sendiri'
+  return m || '-'
+})
+const price = computed(() => `Rp ${Number(props.order?.proposal?.price || 0).toLocaleString('id-ID')}`)
+const total = computed(() => `Rp ${Number(props.order?.totalAmount || 0).toLocaleString('id-ID')}`)
+const paymentMethod = computed(() => props.order?.paymentMethod || props.order?.proposal?.paymentMethod || '-')
 </script>
 
 <template>
@@ -51,10 +57,10 @@ defineEmits<{
               Rincian Pesanan
             </span>
             <h3 class="font-poppins text-xl md:text-2xl font-bold text-gray-950 mt-3">
-              Pesanan #{{ order.id }}
+              Pesanan #{{ order.id.slice(0,8).toUpperCase() }}
             </h3>
             <p class="font-inter text-xs text-gray-400 mt-1">
-              Dipesan pada tanggal {{ order.date }}
+              Dipesan pada tanggal {{ formatDate(order.createdAt) }}
             </p>
           </div>
 
@@ -63,7 +69,7 @@ defineEmits<{
             <!-- Thumbnail -->
             <div class="md:col-span-4 w-full h-32 rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 shadow-sm flex-shrink-0">
               <img
-                :src="order.image || '/images/default_images/default_img.webp'"
+                :src="'/images/default_images/default_img.webp'"
                 alt="Product thumbnail"
                 class="w-full h-full object-cover"
               />
@@ -73,10 +79,10 @@ defineEmits<{
             <div class="md:col-span-8 space-y-3">
               <div>
                 <h4 class="font-poppins text-lg font-bold text-gray-950 leading-snug">
-                  {{ order.productName }}
+                  {{ productName }}
                 </h4>
                 <p class="font-inter text-xs text-gray-500 font-bold mt-1">
-                  Pengrajin: <span class="text-[#7A4D30]">{{ order.artisan }}</span>
+                  Pengrajin: <span class="text-[#7A4D30]">{{ artisanName }}</span>
                 </p>
               </div>
 
@@ -84,11 +90,11 @@ defineEmits<{
               <div class="grid grid-cols-2 gap-4 pt-1">
                 <div class="space-y-0.5">
                   <span class="text-[10px] uppercase font-bold tracking-wider text-gray-400 font-inter">Material</span>
-                  <p class="font-inter text-xs text-gray-700 font-semibold">{{ order.material.split(': ')[1] || order.material }}</p>
+                  <p class="font-inter text-xs text-gray-700 font-semibold">{{ materialsList }}</p>
                 </div>
                 <div class="space-y-0.5">
                   <span class="text-[10px] uppercase font-bold tracking-wider text-gray-400 font-inter">Pengiriman</span>
-                  <p class="font-inter text-xs text-gray-700 font-semibold">{{ order.shipping.split(': ')[1] || order.shipping }}</p>
+                  <p class="font-inter text-xs text-gray-700 font-semibold">{{ shippingLabel }}</p>
                 </div>
               </div>
             </div>
@@ -101,16 +107,12 @@ defineEmits<{
               <h5 class="font-poppins text-sm font-bold text-gray-900">Breakdown Harga</h5>
               <div class="space-y-2 text-xs font-inter text-gray-500">
                 <div class="flex justify-between">
-                  <span>Harga Satuan</span>
-                  <span class="text-gray-800 font-medium">{{ order.price }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Jumlah Barang</span>
-                  <span class="text-gray-800 font-medium">{{ order.totalItem.split(' ')[1] }} unit</span>
+                  <span>Harga Produk</span>
+                  <span class="text-gray-800 font-medium">{{ price }}</span>
                 </div>
                 <div class="flex justify-between border-t border-gray-100 pt-2 font-bold text-gray-900 text-sm">
                   <span>Total Biaya</span>
-                  <span class="text-[#7A4D30]">{{ order.totalPrice }}</span>
+                  <span class="text-[#7A4D30]">{{ total }}</span>
                 </div>
               </div>
             </div>
@@ -119,12 +121,11 @@ defineEmits<{
             <div class="space-y-3">
               <h5 class="font-poppins text-sm font-bold text-gray-900">Metode Pembayaran</h5>
               <div class="space-y-1.5 font-inter text-xs">
-                <p class="text-gray-500">Dibayar lunas menggunakan:</p>
+                <p class="text-gray-500">Dibayar menggunakan:</p>
                 <div class="flex items-center gap-2">
-                  <span class="font-bold text-gray-800 text-sm">{{ order.payment }}</span>
-                  <span class="px-2 py-0.5 rounded bg-green-50 text-green-600 font-bold text-[9px] border border-green-200/50">LUNAS</span>
+                  <span class="font-bold text-gray-800 text-sm">{{ paymentMethod }}</span>
                 </div>
-                <p class="text-[10px] text-gray-400 mt-1">Ref ID: TXN{{ order.id }}8493</p>
+                <p class="text-[10px] text-gray-400 mt-1">Order ID: {{ order.midtransOrderId || order.id.slice(0, 8).toUpperCase() }}</p>
               </div>
             </div>
           </div>
@@ -139,7 +140,7 @@ defineEmits<{
                 <span class="absolute -left-[30px] top-0 w-4 h-4 rounded-full bg-green-500 border-4 border-green-100 flex items-center justify-center"></span>
                 <div class="text-left">
                   <p class="font-inter text-xs font-bold text-gray-900">Pesanan Diterima</p>
-                  <p class="font-inter text-[10px] text-gray-400 mt-0.5">Selesai • {{ order.date }}</p>
+                  <p class="font-inter text-[10px] text-gray-400 mt-0.5">Selesai • {{ formatDate(order.updatedAt || order.createdAt) }}</p>
                 </div>
               </div>
 
