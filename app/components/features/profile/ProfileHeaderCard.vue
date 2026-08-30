@@ -100,7 +100,7 @@ const handleLogout = () => {
     <!-- Actions Buttons -->
     <div class="flex flex-col sm:flex-row gap-3.5 w-full md:w-auto">
       <!-- Lihat Profil Publik Button -->
-      <button
+      <!-- <button
         v-if="isOwnProfile"
         type="button"
         class="border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 py-2.5 px-6 rounded-full text-xs font-bold font-inter transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none"
@@ -109,7 +109,7 @@ const handleLogout = () => {
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
         </svg>
-      </button>
+      </button> -->
 
       <!-- Edit Profil Button -->
       <button

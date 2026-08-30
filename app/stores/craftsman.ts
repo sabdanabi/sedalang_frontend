@@ -102,6 +102,47 @@ export const useCraftsmanStore = defineStore('craftsman', () => {
     }
   }
 
+  const uploadPortfolioImage = async (imageFile: File): Promise<Craftsman> => {
+    isLoading.value = true
+    errorMessage.value = ''
+    try {
+      const formData = new FormData()
+      formData.append('images', imageFile)
+
+      const response = await api('/api/v1/craftsmen/me/portfolios', {
+        method: 'POST',
+        body: formData
+      }) as ApiResponse<Craftsman>
+
+      activeCraftsman.value = response.data
+      return response.data
+    } catch (err: any) {
+      errorMessage.value = err.data?.message || 'Gagal mengunggah foto portofolio. Silakan coba lagi.'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const deletePortfolioImage = async (url: string): Promise<Craftsman> => {
+    isLoading.value = true
+    errorMessage.value = ''
+    try {
+      const response = await api('/api/v1/craftsmen/me/portfolios', {
+        method: 'DELETE',
+        body: { url }
+      }) as ApiResponse<Craftsman>
+
+      activeCraftsman.value = response.data
+      return response.data
+    } catch (err: any) {
+      errorMessage.value = err.data?.message || 'Gagal menghapus foto portofolio. Silakan coba lagi.'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   return {
     matchedCraftsmen,
     activeCraftsman,
@@ -109,6 +150,8 @@ export const useCraftsmanStore = defineStore('craftsman', () => {
     errorMessage,
     getMatchedCraftsmen,
     getCraftsmanById,
-    getCraftsmanMe
+    getCraftsmanMe,
+    uploadPortfolioImage,
+    deletePortfolioImage
   }
 })

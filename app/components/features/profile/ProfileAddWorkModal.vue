@@ -7,12 +7,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'submit', data: { title: string; image: string; description: string }): void
+  (e: 'submit', file: File): void
 }>()
 
-const workTitle = ref('')
 const workImage = ref('')
-const workDesc = ref('')
+const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 
 const triggerImageUpload = () => {
@@ -23,6 +22,7 @@ const onImageSelected = (e: Event) => {
   const target = e.target as HTMLInputElement
   if (target.files && target.files[0]) {
     const file = target.files[0]
+    selectedFile.value = file
     const reader = new FileReader()
     reader.onload = (event) => {
       if (event.target?.result) {
@@ -34,21 +34,16 @@ const onImageSelected = (e: Event) => {
 }
 
 const handleFormSubmit = () => {
-  if (!workTitle.value.trim() || !workDesc.value.trim()) {
-    alert('Judul dan Deskripsi karya tidak boleh kosong.')
+  if (!selectedFile.value) {
+    alert('Silakan pilih file gambar karya terlebih dahulu.')
     return
   }
 
-  emit('submit', {
-    title: workTitle.value.trim(),
-    image: workImage.value, // falls back to default inside grid if empty
-    description: workDesc.value.trim()
-  })
+  emit('submit', selectedFile.value)
 
   // Clear inputs
-  workTitle.value = ''
   workImage.value = ''
-  workDesc.value = ''
+  selectedFile.value = null
 }
 </script>
 
@@ -113,28 +108,6 @@ const handleFormSubmit = () => {
                 class="hidden"
                 @change="onImageSelected"
               />
-            </div>
-
-            <!-- Judul Karya -->
-            <div class="flex flex-col gap-1.5">
-              <label class="font-poppins text-xs font-bold text-gray-950">Judul Karya</label>
-              <input
-                v-model="workTitle"
-                type="text"
-                placeholder="Contoh: Vas Bunga Botol Kaca"
-                class="w-full bg-[#FAF8F5]/80 border border-gray-100 focus:border-[#7A4D30]/40 focus:bg-white rounded-2xl py-3.5 px-4 text-xs md:text-sm text-gray-800 outline-none transition-all font-inter"
-              />
-            </div>
-
-            <!-- Deskripsi Karya -->
-            <div class="flex flex-col gap-1.5">
-              <label class="font-poppins text-xs font-bold text-gray-950">Deskripsi Karya</label>
-              <textarea
-                v-model="workDesc"
-                rows="4"
-                placeholder="Jelaskan proses pembuatan dan bahan yang digunakan..."
-                class="w-full bg-[#FAF8F5]/80 border border-gray-100 focus:border-[#7A4D30]/40 focus:bg-white rounded-2xl py-3 px-4 text-xs md:text-sm text-gray-800 outline-none transition-all font-inter resize-none"
-              ></textarea>
             </div>
 
             <!-- Action buttons -->

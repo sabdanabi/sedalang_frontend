@@ -81,8 +81,8 @@ const loadProfile = async () => {
         const apiWorks = craftsman.portfolioUrls || []
         works.value = apiWorks.map((w: string, index: number) => ({
           id: index + 1,
-          title: `Karya ${index + 1}`,
-          description: `Portofolio karya pengrajin ${profile.value.name}`,
+          title: '',
+          description: '',
           image: w
         }))
       }
@@ -129,27 +129,12 @@ const loadProfile = async () => {
 
         // Load works from API/craftsman portfolios
         const apiWorks = craftsman.portfolioUrls || []
-        if (apiWorks.length > 0) {
-          works.value = apiWorks.map((w: string, index: number) => ({
-            id: index + 1,
-            title: `Karya ${index + 1}`,
-            description: `Portofolio karya pengrajin ${profile.value.name}`,
-            image: w
-          }))
-        } else {
-          // Fallback to local storage if available, otherwise empty to remove dummy data
-          const savedWorks = localStorage.getItem(`sedalang_artisan_works_${userData.id}`)
-          if (savedWorks) {
-            try {
-              works.value = JSON.parse(savedWorks)
-            } catch (e) {
-              console.error('Error parsing local artisan works:', e)
-              works.value = []
-            }
-          } else {
-            works.value = []
-          }
-        }
+        works.value = apiWorks.map((w: string, index: number) => ({
+          id: index + 1,
+          title: '',
+          description: '',
+          image: w
+        }))
       }
     }
   } catch (err) {
@@ -203,18 +188,13 @@ const saveProfileState = () => {
   }
 }
 
-const saveWorksState = () => {
-  if (import.meta.client) {
-    const userId = authStore.user?.id || ''
-    localStorage.setItem(`sedalang_artisan_works_${userId}`, JSON.stringify(works.value))
-  }
-}
+
 
 // Modal visibility toggles
 const showEditModal = ref(false)
 const showAddWorkModal = ref(false)
-const showDetailModal = ref(false)
-const selectedWork = ref<WorkItem | null>(null)
+const showDeleteConfirm = ref(false)
+const urlToDelete = ref('')
 
 // Action Handlers
 const handleEditProfileSubmit = async (updatedData: ProfileData) => {
@@ -243,21 +223,34 @@ const handleEditProfileSubmit = async (updatedData: ProfileData) => {
   }
 }
 
-const handleAddWorkSubmit = (newWorkData: { title: string; image: string; description: string }) => {
-  showAddWorkModal.value = false
-  const newWork: WorkItem = {
-    id: Date.now(),
-    title: newWorkData.title,
-    image: newWorkData.image || '/images/default_images/default_img.webp',
-    description: newWorkData.description
+const handleAddWorkSubmit = async (imageFile: File) => {
+  try {
+    showAddWorkModal.value = false
+    await craftsmanStore.uploadPortfolioImage(imageFile)
+    await loadProfile()
+  } catch (err) {
+    console.error('Failed to upload portfolio image:', err)
+    alert('Gagal mengunggah foto karya. Silakan coba lagi.')
   }
-  works.value.push(newWork)
-  saveWorksState()
 }
 
-const handleViewWorkDetail = (item: WorkItem) => {
-  selectedWork.value = item
-  showDetailModal.value = true
+const handleDeleteWorkClick = (url: string) => {
+  urlToDelete.value = url
+  showDeleteConfirm.value = true
+}
+
+const handleConfirmDelete = async () => {
+  try {
+    showDeleteConfirm.value = false
+    if (urlToDelete.value) {
+      await craftsmanStore.deletePortfolioImage(urlToDelete.value)
+      urlToDelete.value = ''
+      await loadProfile()
+    }
+  } catch (err) {
+    console.error('Failed to delete portfolio image:', err)
+    alert('Gagal menghapus foto karya. Silakan coba lagi.')
+  }
 }
 </script>
 
@@ -301,7 +294,7 @@ const handleViewWorkDetail = (item: WorkItem) => {
         :works="works"
         :isOwnProfile="isOwnProfile"
         @add-work="showAddWorkModal = true"
-        @view-detail="handleViewWorkDetail"
+        @delete-work="handleDeleteWorkClick"
       />
 
     </div>
@@ -320,10 +313,10 @@ const handleViewWorkDetail = (item: WorkItem) => {
       @submit="handleAddWorkSubmit"
     />
 
-    <FeaturesProfileWorkDetailModal
-      :show="showDetailModal"
-      :work="selectedWork"
-      @close="showDetailModal = false"
+    <FeaturesProfileDeleteConfirmModal
+      :show="showDeleteConfirm"
+      @close="showDeleteConfirm = false"
+      @confirm="handleConfirmDelete"
     />
 
   </div>
