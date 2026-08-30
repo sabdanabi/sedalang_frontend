@@ -1,16 +1,23 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useOrdersStore, type Order } from '~/stores/orders'
+import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
   layout: 'dashboard'
 })
 
 const route = useRoute()
+const ordersStore = useOrdersStore()
+const authStore = useAuthStore()
 const orderId = (route.query.id as string) || 'LMD95628654'
 
-// Onboarding validation
-onMounted(() => {
+// Check if current user is craftsman
+const isCraftsman = computed(() => authStore.user?.role === 'CRAFTSMAN')
+
+// Onboarding validation & Fetching order detail
+onMounted(async () => {
   if (import.meta.client) {
     const completed = localStorage.getItem('sedalang_onboarding_completed')
     if (!completed) {
@@ -18,13 +25,12 @@ onMounted(() => {
       return
     }
 
-    // Load persisted timeline steps
-    const savedSteps = localStorage.getItem(`sedalang_timeline_steps_${orderId}`)
-    if (savedSteps) {
+    // Fetch order detail from backend
+    if (orderId && orderId !== 'LMD95628654') {
       try {
-        steps.value = JSON.parse(savedSteps)
-      } catch (e) {
-        console.error('Failed to parse timeline steps', e)
+        await ordersStore.fetchOrderById(orderId)
+      } catch (err) {
+        console.error('Failed to load order detail from backend:', err)
       }
     }
   }
@@ -40,69 +46,126 @@ interface TimelineStep {
 }
 
 // Summary details (Mock order resolver)
-const summary = ref({
-  name: 'Lampu Meja Dekoratif',
-  artisan: 'KaryaLoka Craft',
-  price: 'Rp 150.000',
-  materialDetail: 'Botol Kaca (3 unit)',
-  shippingDetail: 'GoSend by Craftsman',
-  targetDate: 'Oct 24, 2024',
-  image: '/images/default_images/default_img.webp'
+const summary = computed(() => {
+  const activeOrder = ordersStore.activeOrder
+  const priceVal = activeOrder?.proposal?.price || activeOrder?.totalAmount || 0
+  const formattedPrice = 'Rp ' + Number(priceVal).toLocaleString('id-ID')
+
+  return {
+    name: activeOrder?.proposal?.productName || 'Detail Pesanan',
+    artisan: activeOrder?.craftsman?.user?.fullName || 'Pengrajin',
+    price: formattedPrice,
+    materialDetail: activeOrder?.proposal?.materialsNeeded?.join(', ') || 'Material Limbah',
+    shippingDetail: activeOrder?.proposal?.deliveryMethod === 'DROP_OFF' ? 'Ambil Sendiri (DROP_OFF)' : 'GOSEND',
+    targetDate: activeOrder?.proposal?.estimatedCompletionDate
+      ? new Date(activeOrder.proposal.estimatedCompletionDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+      : '-',
+    image: '/images/default_images/default_img.webp'
+  }
 })
 
+// Local override for steps if updated during current session
+const localSteps = ref<TimelineStep[] | null>(null)
+
 // Timeline Steps
-const steps = ref<TimelineStep[]>([
-  {
-    id: 1,
-    title: 'Material Diterima',
-    description: 'Bahan sudah kami terima dan sudah kami verifikasi kondisinya.',
-    date: 'Oct 12, 14:30',
-    status: 'completed'
+const steps = computed<TimelineStep[]>({
+  get() {
+    if (localSteps.value) return localSteps.value
+
+    const activeOrder = ordersStore.activeOrder
+    
+    // If there are no progressSteps from the server, we fallback to standard/localStorage steps
+    if (!activeOrder || !activeOrder.progressSteps || activeOrder.progressSteps.length === 0) {
+      if (import.meta.client) {
+        const savedSteps = localStorage.getItem(`sedalang_timeline_steps_${orderId}`)
+        if (savedSteps) {
+          try {
+            return JSON.parse(savedSteps)
+          } catch (e) {
+            console.error('Failed to parse timeline steps', e)
+          }
+        }
+      }
+
+      // Default mock timeline steps
+      return [
+        {
+          id: 1,
+          title: 'Material Diterima',
+          description: 'Bahan sudah kami terima dan sudah kami verifikasi kondisinya.',
+          date: activeOrder ? new Date(activeOrder.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '12 Okt',
+          status: 'completed'
+        },
+        {
+          id: 2,
+          title: 'Proses Awal',
+          description: 'Bahan sedang dibersihkan dan label botol sudah dilepas seluruhnya.',
+          date: activeOrder ? new Date(activeOrder.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '13 Okt',
+          status: 'completed'
+        },
+        {
+          id: 3,
+          title: 'Produksi',
+          description: 'Proses pemotongan kaca sesuai desain vas. Sedang masuk tahap pembentukan tekstur.',
+          date: 'Dalam proses',
+          status: 'in_progress'
+        },
+        {
+          id: 4,
+          title: 'Penyelesaian',
+          description: 'Pengecatan, perakitan kabel kelistrikan, dan pemasangan kap lampu.',
+          date: 'Expected Oct 18',
+          status: 'pending'
+        },
+        {
+          id: 5,
+          title: 'Siap untuk Dikirim',
+          description: 'Produk dibungkus gelembung (bubble wrap) tebal dan diserahkan ke kurir.',
+          date: 'Expected Oct 20',
+          status: 'pending'
+        }
+      ]
+    }
+
+    // Map backend progressSteps dynamically
+    return activeOrder.progressSteps.map((step, idx) => {
+      const isLast = idx === activeOrder.progressSteps!.length - 1
+      return {
+        id: idx + 1,
+        title: step.title,
+        description: step.description,
+        date: new Date(step.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+        status: isLast ? 'in_progress' : 'completed'
+      } as TimelineStep
+    })
   },
-  {
-    id: 2,
-    title: 'Proses Awal',
-    description: 'Bahan sedang dibersihkan dan label botol sudah dilepas seluruhnya.',
-    date: 'Oct 13, 09:15',
-    status: 'completed'
-  },
-  {
-    id: 3,
-    title: 'Produksi',
-    description: 'Proses pemotongan kaca sesuai desain vas. Sedang masuk tahap pembentukan tekstur.',
-    date: 'Dalam proses',
-    status: 'in_progress'
-  },
-  {
-    id: 4,
-    title: 'Penyelesaian',
-    description: 'Pengecatan, perakitan kabel kelistrikan, dan pemasangan kap lampu.',
-    date: 'Expected Oct 18',
-    status: 'pending'
-  },
-  {
-    id: 5,
-    title: 'Siap untuk Dikirim',
-    description: 'Produk dibungkus gelembung (bubble wrap) tebal dan diserahkan ke kurir.',
-    date: 'Expected Oct 20',
-    status: 'pending'
+  set(val) {
+    localSteps.value = val
   }
-])
+})
 
 // Photos Gallery
-const photos = ref<string[]>([
-  '/images/landing_page_images/tracking_progres_img.webp', // Main image
-  '/images/landing_page_images/ai_page_img.webp',
-  '/images/landing_page_images/discussion_room_img.webp',
-  '/images/auth_img.webp',
-  '/images/default_images/default_img.webp'
-])
+const photos = computed<string[]>(() => {
+  const activeOrder = ordersStore.activeOrder
+  if (activeOrder?.progressSteps) {
+    const urls = activeOrder.progressSteps
+      .flatMap(s => s.mediaUrls || [])
+      .filter(Boolean)
+    if (urls.length > 0) return urls
+  }
+  return ['/images/default_images/default_img.webp']
+})
 
 // Billing Breakdown
-const billing = ref({
-  productPrice: 'Rp 150.000',
-  shippingFee: 'Rp 12.500',
-  totalPrice: 'Rp 162.500'
+const billing = computed(() => {
+  const activeOrder = ordersStore.activeOrder
+  const priceVal = activeOrder?.proposal?.price || activeOrder?.totalAmount || 0
+
+  return {
+    productPrice: 'Rp ' + Number(priceVal).toLocaleString('id-ID'),
+    shippingFee: activeOrder?.proposal?.deliveryMethod === 'DROP_OFF' ? 'Rp 0' : 'Rp 15.000',
+    totalPrice: 'Rp ' + Number(activeOrder?.totalAmount || priceVal).toLocaleString('id-ID')
+  }
 })
 
 // Modals State
@@ -117,13 +180,16 @@ const handleAddProgress = (formData: { title: string; description: string; statu
     localStorage.setItem(`sedalang_order_status_${orderId}`, formData.status)
   }
 
+  // Create mutable copy of steps to modify
+  const stepsCopy = [...steps.value]
+
   // Find index of currently 'in_progress' step
-  const inProgressIndex = steps.value.findIndex(s => s.status === 'in_progress')
+  const inProgressIndex = stepsCopy.findIndex(s => s.status === 'in_progress')
   
   if (inProgressIndex !== -1) {
     // Complete the previous active step
-    steps.value[inProgressIndex].status = 'completed'
-    steps.value[inProgressIndex].date = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + `, ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`
+    stepsCopy[inProgressIndex].status = 'completed'
+    stepsCopy[inProgressIndex].date = new Date().toLocaleDateString('id-ID', { month: 'short', day: 'numeric' }) + `, ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}`
   }
 
   // Create new active step
@@ -136,17 +202,19 @@ const handleAddProgress = (formData: { title: string; description: string; statu
   }
 
   // Insert before the pending steps
-  const firstPendingIndex = steps.value.findIndex(s => s.status === 'pending')
+  const firstPendingIndex = stepsCopy.findIndex(s => s.status === 'pending')
   if (firstPendingIndex !== -1) {
-    steps.value.splice(firstPendingIndex, 0, newStep)
+    stepsCopy.splice(firstPendingIndex, 0, newStep)
   } else {
-    steps.value.push(newStep)
+    stepsCopy.push(newStep)
   }
 
-  // Update indexes of subsequent timeline items
+  // Update steps computed property (triggers localSteps ref)
+  steps.value = stepsCopy
+
   // Persist timeline steps
   if (import.meta.client) {
-    localStorage.setItem(`sedalang_timeline_steps_${orderId}`, JSON.stringify(steps.value))
+    localStorage.setItem(`sedalang_timeline_steps_${orderId}`, JSON.stringify(stepsCopy))
   }
 }
 </script>
@@ -177,6 +245,7 @@ const handleAddProgress = (formData: { title: string; description: string; statu
           <!-- Timeline progress pengerjaan steps -->
           <FeaturesHistoryProgressTimeline 
             :steps="steps" 
+            :show-add-button="isCraftsman"
             @add-progress="showAddModal = true" 
           />
 

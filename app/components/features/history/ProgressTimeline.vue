@@ -9,6 +9,7 @@ interface TimelineStep {
 
 defineProps<{
   steps: TimelineStep[]
+  showAddButton?: boolean
 }>()
 
 defineEmits<{
@@ -27,6 +28,7 @@ defineEmits<{
 
       <!-- Tambah Progres Button -->
       <button
+        v-if="showAddButton"
         type="button"
         @click="$emit('add-progress')"
         class="border border-[#7A4D30]/60 hover:border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 px-4 py-2 rounded-full text-xs font-bold font-inter transition-all duration-300 flex items-center gap-1 cursor-pointer focus:outline-none"
