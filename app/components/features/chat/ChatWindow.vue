@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import { useAuthStore } from '~/stores/auth'
-import { useChatStore, type ChatRoom } from '~/stores/chat'
+import { useChatStore, type ChatRoom, type Proposal } from '~/stores/chat'
 import { getAvatarUrl } from '~/composables/useAvatar'
 
 const props = defineProps<{
@@ -25,6 +25,8 @@ const chatStore = useChatStore()
 const messageInput = ref('')
 const messageContainer = ref<HTMLElement | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
+const selectedProposal = ref<Proposal | null>(null)
+const showProposalView = ref(false)
 
 // Auto-scroll messages area to bottom
 const scrollToBottom = () => {
@@ -104,9 +106,19 @@ const isOutgoing = (item: any) => {
   if (item.type === 'message') {
     return item.data.senderId === authStore.user?.id
   } else {
+    // Proposal is outgoing if the logged-in user is a CRAFTSMAN
     return authStore.user?.role === 'CRAFTSMAN'
   }
 }
+
+// Role detection based strictly on user role
+const isCraftsman = computed(() => {
+  return authStore.user?.role === 'CRAFTSMAN'
+})
+
+const isUser = computed(() => {
+  return authStore.user?.role === 'USER'
+})
 
 const formatMessageTime = (dateStr: string) => {
   const date = new Date(dateStr)
@@ -114,27 +126,25 @@ const formatMessageTime = (dateStr: string) => {
 }
 
 // Proposal operations
-const handleAccept = async (proposalId: string) => {
-  try {
-    const res = await chatStore.acceptProposal(proposalId)
-    if (res.midtransRedirectUrl) {
-      console.log('Redirecting to Midtrans Sandbox payment gateway:', res.midtransRedirectUrl)
-      window.location.href = res.midtransRedirectUrl
-    } else {
-      alert('Proposal berhasil disetujui!')
-    }
-  } catch (err: any) {
-    alert('Gagal menyetujui proposal: ' + (err.message || err))
-  }
+const openProposalView = (proposal: Proposal) => {
+  selectedProposal.value = proposal
+  showProposalView.value = true
 }
 
-const handleReject = async (proposalId: string) => {
-  try {
-    await chatStore.rejectProposal(proposalId)
-    alert('Proposal berhasil ditolak.')
-  } catch (err: any) {
-    alert('Gagal menolak proposal: ' + (err.message || err))
-  }
+// Latest proposal in active room (for header button)
+const latestProposal = computed(() => {
+  const roomProposals = chatStore.proposals
+  if (!roomProposals.length) return null
+  // Prefer PENDING, else most recent
+  const pending = roomProposals.filter(p => p.status === 'PENDING')
+  if (pending.length) return pending[pending.length - 1]
+  return roomProposals[roomProposals.length - 1]
+})
+
+const handleProposalActioned = async () => {
+  showProposalView.value = false
+  // acceptProposal / rejectProposal already update local proposal status
+  // fetchProposals is skipped since the endpoint returns 404
 }
 </script>
 
@@ -177,9 +187,29 @@ const handleReject = async (proposalId: string) => {
           </svg>
         </button>
 
-        <!-- Proposal Button (Visible only to Craftsman) -->
+        <!-- Lihat Proposal Button (Visible to USER when proposals exist) -->
         <button
-          v-if="authStore.user?.role === 'CRAFTSMAN'"
+          v-if="isUser && latestProposal"
+          type="button"
+          @click="openProposalView(latestProposal!)"
+          class="relative border border-[#7A4D30]/30 text-[#7A4D30] hover:bg-[#7A4D30]/5 px-4 py-2.5 rounded-full text-xs font-bold font-inter transition-all duration-200 flex items-center gap-1.5 cursor-pointer focus:outline-none"
+          title="Lihat Proposal"
+        >
+          <!-- Document icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          Proposal
+          <!-- Pending badge dot -->
+          <span
+            v-if="latestProposal?.status === 'PENDING'"
+            class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"
+          />
+        </button>
+
+        <!-- Buat Proposal Button (Visible only to CRAFTSMAN) -->
+        <button
+          v-if="isCraftsman"
           type="button"
           @click="$emit('open-proposal')"
           class="border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30] hover:text-white px-5 py-2.5 rounded-full text-xs md:text-sm font-semibold transition-all duration-300 flex items-center gap-1.5 group cursor-pointer focus:outline-none"
@@ -240,10 +270,12 @@ const handleReject = async (proposalId: string) => {
               <p class="whitespace-pre-wrap">{{ item.data.content }}</p>
             </div>
 
-            <!-- Digital Proposal Card Bubble -->
-            <div 
+            <!-- Digital Proposal Card Bubble (clickable to open view modal) -->
+            <button
               v-else-if="item.type === 'proposal'"
-              class="rounded-[24px] p-6 text-sm font-inter leading-relaxed shadow-md border text-left bg-[#FAF8F5] w-full max-w-[320px] animate-fade-in"
+              type="button"
+              @click="openProposalView(item.data)"
+              class="rounded-[24px] p-5 text-sm font-inter leading-relaxed shadow-md border text-left bg-[#FAF8F5] w-full max-w-[300px] animate-fade-in cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 focus:outline-none"
               :class="[
                 isOutgoing(item)
                   ? 'border-[#7A4D30]/20 rounded-tr-none'
@@ -251,104 +283,40 @@ const handleReject = async (proposalId: string) => {
               ]"
             >
               <!-- Icon and Title -->
-              <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-[#7A4D30]/10 text-[#7A4D30] flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+              <div class="flex items-center gap-3 mb-3">
+                <div class="w-9 h-9 rounded-full bg-[#7A4D30]/10 text-[#7A4D30] flex items-center justify-center flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4.5 h-4.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                   </svg>
                 </div>
-                <div>
-                  <h4 class="font-poppins font-bold text-gray-950 text-sm leading-snug">
-                    Proposal Digital
-                  </h4>
-                  <span class="text-[10px] text-gray-400 font-bold tracking-wider font-mono">
-                    {{ item.data.status }}
-                  </span>
+                <div class="flex-1 min-w-0">
+                  <h4 class="font-poppins font-bold text-gray-950 text-sm leading-snug truncate">{{ item.data.productName }}</h4>
+                  <p class="font-inter text-[11px] text-[#7A4D30] font-bold mt-0.5">
+                    Rp {{ Number(item.data.price).toLocaleString('id-ID') }}
+                  </p>
                 </div>
               </div>
 
-              <!-- Product Details -->
-              <div class="space-y-3 text-xs text-gray-700">
-                <div>
-                  <span class="text-gray-400 font-medium">Nama Produk:</span>
-                  <span class="font-bold text-gray-900 block mt-0.5">{{ item.data.productName }}</span>
-                </div>
-                <div>
-                  <span class="text-gray-400 font-medium">Harga Penawaran:</span>
-                  <span class="font-bold text-[#7A4D30] block mt-0.5 text-sm">Rp {{ Number(item.data.price).toLocaleString('id-ID') }}</span>
-                </div>
-                <div>
-                  <span class="text-gray-400 font-medium">Material Dibutuhkan:</span>
-                  <div class="flex flex-wrap gap-1 mt-1">
-                    <span v-for="mat in item.data.materialsNeeded" :key="mat" class="bg-white border border-gray-150 text-gray-600 px-2 py-0.5 rounded text-[10px] font-medium">
-                      {{ mat }}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <span class="text-gray-400 font-medium">Metode Pengiriman:</span>
-                  <span class="font-bold text-gray-950 block mt-0.5">{{ item.data.deliveryMethod }}</span>
-                </div>
-                <div>
-                  <span class="text-gray-400 font-medium">Estimasi Penyelesaian:</span>
-                  <span class="font-bold text-gray-950 block mt-0.5">{{ new Date(item.data.estimatedCompletionDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
-                </div>
-                <div>
-                  <span class="text-gray-400 font-medium">Metode Pembayaran:</span>
-                  <span class="font-bold text-gray-950 block mt-0.5">{{ item.data.paymentMethod }}</span>
-                </div>
-              </div>
-
-              <!-- Action buttons for Customer (User) if status is PENDING -->
-              <div v-if="item.data.status === 'PENDING' && authStore.user?.role === 'USER'" class="grid grid-cols-2 gap-3 mt-5 pt-4 border-t border-gray-100">
-                <button
-                  @click="handleAccept(item.data.id)"
-                  type="button"
-                  class="bg-[#7A4D30] hover:bg-[#683f26] text-white text-xs font-bold font-inter py-2.5 px-3 rounded-full cursor-pointer transition-all duration-200 active:scale-95 shadow-sm text-center flex items-center justify-center gap-1"
+              <!-- Status badge + tap hint -->
+              <div class="flex items-center justify-between pt-2.5 border-t border-gray-100">
+                <span
+                  class="text-[10px] font-bold font-inter px-2 py-0.5 rounded-full border"
+                  :class="{
+                    'text-amber-700 bg-amber-50 border-amber-200': item.data.status === 'PENDING',
+                    'text-green-700 bg-green-50 border-green-200': item.data.status === 'ACCEPTED',
+                    'text-red-700 bg-red-50 border-red-200': item.data.status === 'REJECTED',
+                  }"
                 >
-                  Setuju
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                </button>
-
-                <button
-                  @click="handleReject(item.data.id)"
-                  type="button"
-                  class="border border-red-200 text-red-600 hover:bg-red-50 text-xs font-bold font-inter py-2.5 px-3 rounded-full cursor-pointer transition-all duration-200 active:scale-95 text-center flex items-center justify-center gap-1"
-                >
-                  Tolak
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <!-- Status Notification for Craftsman or Completed states -->
-              <div v-else class="mt-4 pt-3 border-t border-gray-150 flex items-center justify-center">
-                <span 
-                  v-if="item.data.status === 'PENDING'" 
-                  class="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full"
-                >
-                  Menunggu Persetujuan
+                  {{ item.data.status === 'PENDING' ? 'Menunggu' : item.data.status === 'ACCEPTED' ? 'Disetujui' : 'Ditolak' }}
                 </span>
-                <span 
-                  v-else-if="item.data.status === 'ACCEPTED'" 
-                  class="text-[11px] font-bold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full flex items-center gap-1"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" class="w-3.5 h-3.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                <span class="text-[10px] text-gray-400 font-inter font-medium flex items-center gap-1">
+                  Lihat detail
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3 h-3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                   </svg>
-                  Proposal Disetujui
-                </span>
-                <span 
-                  v-else-if="item.data.status === 'REJECTED'" 
-                  class="text-[11px] font-bold text-red-700 bg-red-50 border border-red-200 px-3 py-1 rounded-full"
-                >
-                  Proposal Ditolak
                 </span>
               </div>
-            </div>
+            </button>
 
             <!-- Timestamp -->
             <span class="text-[10px] text-gray-400 mt-1.5 font-medium font-inter select-none">
@@ -422,6 +390,16 @@ const handleReject = async (proposalId: string) => {
     </div>
 
   </div>
+
+  <!-- Proposal View Modal -->
+  <FeaturesChatProposalViewModal
+    :show="showProposalView"
+    :proposal="selectedProposal"
+    :isUser="isUser"
+    @close="showProposalView = false"
+    @accepted="handleProposalActioned"
+    @rejected="handleProposalActioned"
+  />
 </template>
 
 <style scoped>

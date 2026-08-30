@@ -65,9 +65,27 @@ async function main() {
     }, finalCraftToken);
     console.log('Created Proposal:', propRes);
 
-    // List rooms for user (to see if proposals relation is returned!)
-    const userRooms = await makeRequest('/api/v1/chat/rooms', 'GET', null, userToken);
-    console.log('Rooms list after proposal:', JSON.stringify(userRooms.data, null, 2));
+    // Test various proposal fetch endpoints to find the correct one
+    try {
+      const getProps1 = await makeRequest(`/api/v1/chat/proposals?roomId=${roomId}`, 'GET', null, userToken);
+      console.log('GET /api/v1/chat/proposals?roomId response:', getProps1);
+    } catch(e) {
+      console.log('GET /api/v1/chat/proposals?roomId failed:', e.message);
+    }
+
+    try {
+      const getProps2 = await makeRequest(`/api/v1/chat/proposals`, 'GET', null, userToken);
+      console.log('GET /api/v1/chat/proposals response:', getProps2);
+    } catch(e) {
+      console.log('GET /api/v1/chat/proposals failed:', e.message);
+    }
+
+    try {
+      const getProps3 = await makeRequest(`/api/v1/chat/rooms/${roomId}/proposal`, 'GET', null, userToken);
+      console.log('GET /api/v1/chat/rooms/roomId/proposal response:', getProps3);
+    } catch(e) {
+      console.log('GET /api/v1/chat/rooms/roomId/proposal failed:', e.message);
+    }
 
   } catch (e) {
     console.error(e);

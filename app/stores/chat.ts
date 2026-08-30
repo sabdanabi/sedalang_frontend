@@ -121,6 +121,13 @@ export const useChatStore = defineStore('chat', () => {
     return rooms.value.find(r => r.id === activeRoomId.value) || null
   })
 
+  // Helper to persist proposals in localStorage to survive browser refreshes/redirects
+  const saveProposalsToStorage = (roomId: string) => {
+    if (import.meta.client && roomId) {
+      localStorage.setItem(`sedalang_proposals_${roomId}`, JSON.stringify(proposals.value))
+    }
+  }
+
   // Computed: Combined message and proposal timeline sorted chronologically
   const chatTimeline = computed(() => {
     const timeline: Array<{
@@ -188,8 +195,10 @@ export const useChatStore = defineStore('chat', () => {
       }
       return res.data
     } catch (err: any) {
-      error.value = err.message || 'Gagal membuat/membuka obrolan'
-      console.error('Error creating chat room:', err)
+      const responseData = err.response?._data
+      const detailedMessage = responseData?.message || err.message || 'Gagal membuat/membuka obrolan'
+      error.value = detailedMessage
+      console.error('Error creating chat room. Status:', err.response?.status || err.status, 'Response details:', responseData)
       throw err
     } finally {
       isLoading.value = false
@@ -205,8 +214,6 @@ export const useChatStore = defineStore('chat', () => {
         method: 'GET'
       }) as ApiResponse<ChatMessage[]>
       messages.value = res.data || []
-      // Clear proposals list (will be populated dynamically via Socket broadcasts or status updates)
-      proposals.value = []
       return res.data
     } catch (err: any) {
       error.value = err.message || 'Gagal memuat histori pesan'
@@ -214,6 +221,31 @@ export const useChatStore = defineStore('chat', () => {
       throw err
     } finally {
       isLoading.value = false
+    }
+  }
+
+  // REST Action: Fetch proposals for active room
+  // NOTE: This endpoint may not exist on backend (404). Proposals are primarily
+  // populated via createProposal() local push and socket newProposal events.
+  const fetchProposals = async (roomId: string) => {
+    try {
+      console.log('[Chat] Fetching proposals for room:', roomId)
+      const res = await api(`/api/v1/chat/rooms/${roomId}/proposals`, {
+        method: 'GET'
+      }) as ApiResponse<Proposal[]>
+      console.log('[Chat] Proposals fetched:', res.data)
+      proposals.value = res.data || []
+      return res.data
+    } catch (err: any) {
+      // If endpoint doesn't exist (404) or fails, keep existing proposals intact
+      // Proposals are already managed via createProposal() and socket events
+      const status = err?.response?.status || err?.statusCode || err?.status
+      if (status === 404) {
+        console.warn('[Chat] fetchProposals: endpoint not available (404), using socket events instead')
+      } else {
+        console.error('[Chat] Error fetching proposals:', err)
+      }
+      // Do NOT reset proposals.value — preserve any existing proposals
     }
   }
 
@@ -230,10 +262,13 @@ export const useChatStore = defineStore('chat', () => {
       // Update local proposals list
       if (!proposals.value.some(p => p.id === res.data.id)) {
         proposals.value.push(res.data)
+        saveProposalsToStorage(roomId)
       }
       return res.data
     } catch (err: any) {
-      error.value = err.message || 'Gagal membuat proposal'
+      const responseData = err.response?._data
+      const detailedMessage = responseData?.message || err.message || 'Gagal membuat proposal'
+      error.value = detailedMessage
       console.error('Error creating proposal:', err)
       throw err
     } finally {
@@ -254,6 +289,7 @@ export const useChatStore = defineStore('chat', () => {
       const localProp = proposals.value.find(p => p.id === proposalId)
       if (localProp) {
         localProp.status = 'ACCEPTED'
+        saveProposalsToStorage(localProp.roomId)
       }
       return res.data
     } catch (err: any) {
@@ -278,6 +314,7 @@ export const useChatStore = defineStore('chat', () => {
       const localProp = proposals.value.find(p => p.id === proposalId)
       if (localProp) {
         localProp.status = 'REJECTED'
+        saveProposalsToStorage(localProp.roomId)
       }
       return res.data
     } catch (err: any) {
@@ -340,24 +377,34 @@ export const useChatStore = defineStore('chat', () => {
 
     // Listen for new proposals via socket
     socket.value.on('newProposal', (proposal: Proposal) => {
-      console.log('Socket newProposal received:', proposal)
-      if (activeRoomId.value && proposal.roomId === activeRoomId.value) {
+      console.log('[Socket] newProposal received:', proposal)
+      // Accept proposal if it belongs to the active room (check roomId or fallback to activeRoom)
+      const targetRoomId = (proposal as any).roomId || activeRoomId.value
+      if (activeRoomId.value && targetRoomId === activeRoomId.value) {
         if (!proposals.value.some(p => p.id === proposal.id)) {
-          proposals.value.push(proposal)
+          proposals.value = [...proposals.value, proposal]
+          saveProposalsToStorage(activeRoomId.value)
         }
       }
     })
 
     // Listen for proposal updates (status changes) via socket
     socket.value.on('proposalUpdated', (proposal: Proposal) => {
-      console.log('Socket proposalUpdated received:', proposal)
-      if (activeRoomId.value && proposal.roomId === activeRoomId.value) {
+      console.log('[Socket] proposalUpdated received:', proposal)
+      const targetRoomId = (proposal as any).roomId || activeRoomId.value
+      if (activeRoomId.value && targetRoomId === activeRoomId.value) {
         const index = proposals.value.findIndex(p => p.id === proposal.id)
         if (index !== -1) {
-          proposals.value[index] = proposal
+          // Replace immutably to trigger Vue reactivity
+          proposals.value = [
+            ...proposals.value.slice(0, index),
+            proposal,
+            ...proposals.value.slice(index + 1)
+          ]
         } else {
-          proposals.value.push(proposal)
+          proposals.value = [...proposals.value, proposal]
         }
+        saveProposalsToStorage(activeRoomId.value)
       }
     })
 
@@ -378,7 +425,24 @@ export const useChatStore = defineStore('chat', () => {
 
   // WebSocket Action: Join room as participant
   const joinRoom = (roomId: string) => {
+    // Reset proposals when switching rooms so old room's proposals don't leak
+    if (activeRoomId.value !== roomId) {
+      proposals.value = []
+    }
     activeRoomId.value = roomId
+
+    // Load saved proposals from localStorage if any to survive refreshes
+    if (import.meta.client && roomId) {
+      const saved = localStorage.getItem(`sedalang_proposals_${roomId}`)
+      if (saved) {
+        try {
+          proposals.value = JSON.parse(saved)
+        } catch (e) {
+          console.error('Failed to parse saved proposals:', e)
+        }
+      }
+    }
+
     if (socket.value) {
       console.log('Emitting joinRoom for roomId:', roomId)
       socket.value.emit('joinRoom', roomId)
@@ -406,6 +470,7 @@ export const useChatStore = defineStore('chat', () => {
     fetchRooms,
     createOrGetRoom,
     fetchMessages,
+    fetchProposals,
     createProposal,
     acceptProposal,
     rejectProposal,

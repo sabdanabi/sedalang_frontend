@@ -46,10 +46,15 @@ onMounted(async () => {
     const craftsmanId = route.query.craftsmanId as string
     const ideaId = route.query.ideaId as string
     const craftsmanParam = route.query.craftsman as string
+    const craftsmanNameParam = route.query.craftsmanName as string
 
-    if (craftsmanId && ideaId) {
+    if (craftsmanId) {
       try {
-        const existingRoom = chatStore.rooms.find(r => r.craftsmanId === craftsmanId || r.craftsman?.id === craftsmanId)
+        const existingRoom = chatStore.rooms.find(r => 
+          r.craftsmanId === craftsmanId || 
+          r.craftsman?.id === craftsmanId || 
+          r.craftsman?.userId === craftsmanId
+        )
         if (existingRoom) {
           // Move existing conversation to the top of the sidebar list
           const index = chatStore.rooms.findIndex(r => r.id === existingRoom.id)
@@ -60,18 +65,44 @@ onMounted(async () => {
           chatStore.joinRoom(existingRoom.id)
           await chatStore.fetchMessages(existingRoom.id)
         } else {
-          const room = await chatStore.createOrGetRoom(craftsmanId, ideaId)
-          chatStore.joinRoom(room.id)
-          await chatStore.fetchMessages(room.id)
+          // Try to get or create room
+          let activeIdeaId = ideaId
+          if (!activeIdeaId) {
+            activeIdeaId = localStorage.getItem('sedalang_active_idea_id') || ''
+            if (!activeIdeaId) {
+              const api = useApi()
+              const res = await api('/api/v1/ai/history') as any
+              if (res.data && res.data.length > 0) {
+                const latestHistory = res.data[0]
+                if (latestHistory.ideas && latestHistory.ideas.length > 0) {
+                  activeIdeaId = latestHistory.ideas[0].id
+                }
+              }
+            }
+          }
+          
+          if (activeIdeaId) {
+            const room = await chatStore.createOrGetRoom(craftsmanId, activeIdeaId)
+            chatStore.joinRoom(room.id)
+            await chatStore.fetchMessages(room.id)
+          } else {
+            console.warn('Could not find active idea to start chat room.')
+            if (chatStore.rooms.length > 0) {
+              const firstRoom = chatStore.rooms[0]
+              chatStore.joinRoom(firstRoom.id)
+              await chatStore.fetchMessages(firstRoom.id)
+            }
+          }
         }
       } catch (err) {
         console.error('Failed to auto-initiate chat room:', err)
       }
-    } else if (craftsmanParam) {
+    } else if (craftsmanParam || craftsmanNameParam) {
+      const searchName = (craftsmanParam || craftsmanNameParam).toLowerCase()
       // Find existing room matching the craftsman name
       const room = chatStore.rooms.find(r => 
-        (r.craftsman?.user?.fullName || '').toLowerCase().includes(craftsmanParam.toLowerCase()) ||
-        (r.user?.fullName || '').toLowerCase().includes(craftsmanParam.toLowerCase())
+        (r.craftsman?.user?.fullName || '').toLowerCase().includes(searchName) ||
+        (r.user?.fullName || '').toLowerCase().includes(searchName)
       )
       if (room) {
         chatStore.joinRoom(room.id)
@@ -109,30 +140,36 @@ const handleSendMessage = (text: string) => {
 
 const handleProposalSubmit = async (proposalData: any) => {
   showProposalModal.value = false
-  if (chatStore.activeRoomId) {
-    try {
-      // Safe Date parsing
-      let completionDate = new Date(proposalData.estimate)
-      if (isNaN(completionDate.getTime())) {
-        completionDate = new Date()
-        completionDate.setDate(completionDate.getDate() + 7)
-      }
-      const estimatedCompletionDate = completionDate.toISOString().split('T')[0]
-
-      // Map shipping options: "Ambil Sendiri" -> "DROP_OFF", others -> "GOSEND"
-      const deliveryMethod = proposalData.shippingMethod === 'Ambil Sendiri' ? 'DROP_OFF' : 'GOSEND'
-
-      await chatStore.createProposal(chatStore.activeRoomId, {
-        productName: proposalData.productName,
-        price: Number(proposalData.price) || 0,
-        materialsNeeded: proposalData.materialName.split(',').map((s: string) => s.trim()).filter(Boolean),
-        deliveryMethod,
-        estimatedCompletionDate,
-        paymentMethod: proposalData.paymentMethod || 'Transfer Bank'
-      })
-    } catch (err: any) {
-      alert('Gagal membuat proposal: ' + (err.message || err))
+  if (!chatStore.activeRoomId) return
+  try {
+    // Parse and validate completion date — fallback to 7 days from now
+    let completionDate = new Date(proposalData.estimatedCompletionDate)
+    if (isNaN(completionDate.getTime())) {
+      completionDate = new Date()
+      completionDate.setDate(completionDate.getDate() + 7)
     }
+    const estimatedCompletionDate = completionDate.toISOString().split('T')[0]
+
+    // Map shipping: 'Ambil Sendiri' -> 'DROP_OFF', semua lainnya (termasuk 'GOSEND') -> 'GOSEND'
+    const deliveryMethod: 'GOSEND' | 'DROP_OFF' =
+      proposalData.deliveryMethod === 'Ambil Sendiri' ? 'DROP_OFF' : 'GOSEND'
+
+    await chatStore.createProposal(chatStore.activeRoomId, {
+      productName: proposalData.productName,
+      price: Number(proposalData.price) || 0,
+      materialsNeeded: Array.isArray(proposalData.materialsNeeded)
+        ? proposalData.materialsNeeded
+        : String(proposalData.materialsNeeded).split(',').map((s: string) => s.trim()).filter(Boolean),
+      deliveryMethod,
+      estimatedCompletionDate,
+      paymentMethod: proposalData.paymentMethod || 'Transfer Bank'
+    })
+
+    // Refresh proposals for the active room — endpoint may not exist,
+    // but createProposal already pushed to local state
+    // await chatStore.fetchProposals(chatStore.activeRoomId)
+  } catch (err: any) {
+    alert('Gagal membuat proposal: ' + (err.message || err))
   }
 }
 </script>
