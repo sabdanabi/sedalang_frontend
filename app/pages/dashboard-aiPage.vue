@@ -167,9 +167,14 @@ const closeProductDetail = () => {
 }
 
 const handleUseIdea = () => {
+  const ideaId = selectedProduct.value?.id
   showModal.value = false
   selectedProduct.value = null
-  navigateTo('/select-craftsman')
+  if (ideaId) {
+    navigateTo(`/select-craftsman?ideaId=${ideaId}`)
+  } else {
+    navigateTo('/select-craftsman')
+  }
 }
 </script>
 

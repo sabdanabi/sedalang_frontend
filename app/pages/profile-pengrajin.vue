@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
+import { useCraftsmanStore } from '~/stores/craftsman'
+import { getAvatarUrl } from '~/composables/useAvatar'
 import { navigateTo } from '#app'
 
 definePageMeta({
@@ -29,6 +32,8 @@ interface WorkItem {
 }
 
 const authStore = useAuthStore()
+const route = useRoute()
+const craftsmanStore = useCraftsmanStore()
 
 // Reactive States (initially populated with dummy data, overwritten upon API load)
 const profile = ref<ProfileData>({
@@ -51,8 +56,46 @@ const profile = ref<ProfileData>({
 
 const works = ref<WorkItem[]>([])
 
+const isOwnProfile = computed(() => {
+  if (!route.query.id) return true
+  const myCraftsmanId = authStore.user?.craftsman?.id || (authStore.user as any)?.craftsmanId
+  return route.query.id === myCraftsmanId
+})
+
 const loadProfile = async () => {
   try {
+    // If we're looking at another craftsman's profile
+    if (route.query.id) {
+      const craftsmanId = route.query.id as string
+      const craftsman = await craftsmanStore.getCraftsmanById(craftsmanId)
+      if (craftsman) {
+        profile.value = {
+          name: craftsman.user?.fullName || 'Pengrajin',
+          description: craftsman.craftType || 'Pengrajin Kreatif',
+          location: craftsman.location || 'Semarang Tengah, Jawa Tengah',
+          rating: craftsman.averageRating || 5.0,
+          projectsCount: craftsman.completedOrdersCount || 0,
+          avatar: getAvatarUrl(craftsman.user?.avatarUrl, craftsman.user?.fullName || 'User'),
+          skills: typeof craftsman.skills === 'string'
+            ? (craftsman.skills as string).split(',').map((s: string) => s.trim()).filter(Boolean)
+            : (Array.isArray(craftsman.skills) ? craftsman.skills : []),
+          latitude: craftsman.latitude,
+          longitude: craftsman.longitude
+        }
+
+        // Map works from API portfolios
+        const apiWorks = craftsman.portfolioUrls || []
+        works.value = apiWorks.map((w: string, index: number) => ({
+          id: index + 1,
+          title: `Karya ${index + 1}`,
+          description: `Portofolio karya pengrajin ${profile.value.name}`,
+          image: w
+        }))
+      }
+      return
+    }
+
+    // Otherwise, load logged-in craftsman's profile
     const userData = await authStore.getMe()
     if (userData) {
       if (userData.role === 'USER') {
@@ -155,6 +198,10 @@ onMounted(() => {
   }
 })
 
+const handleContactCraftsman = () => {
+  navigateTo(`/chat?craftsman=${encodeURIComponent(profile.value.name)}`)
+}
+
 // Save profile state
 const saveProfileState = () => {
   if (import.meta.client) {
@@ -236,7 +283,9 @@ const handleViewWorkDetail = (item: WorkItem) => {
       <!-- Profile Header Summary Card -->
       <FeaturesProfileHeaderCard
         :profile="profile"
+        :isOwnProfile="isOwnProfile"
         @edit="showEditModal = true"
+        @chat="handleContactCraftsman"
       />
 
       <!-- Skills and Handled Materials tags list -->
@@ -254,6 +303,7 @@ const handleViewWorkDetail = (item: WorkItem) => {
       <!-- Portfolio works gallery grid -->
       <FeaturesProfilePortfolioGrid
         :works="works"
+        :isOwnProfile="isOwnProfile"
         @add-work="showAddWorkModal = true"
         @view-detail="handleViewWorkDetail"
       />

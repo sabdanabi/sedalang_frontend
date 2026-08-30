@@ -6,9 +6,15 @@ interface WorkItem {
   image: string
 }
 
-defineProps<{
-  works: WorkItem[]
-}>()
+withDefaults(
+  defineProps<{
+    works: WorkItem[]
+    isOwnProfile?: boolean
+  }>(),
+  {
+    isOwnProfile: true
+  }
+)
 
 defineEmits<{
   (e: 'add-work'): void
@@ -32,6 +38,7 @@ defineEmits<{
 
       <!-- Tambah Karya Trigger -->
       <button
+        v-if="isOwnProfile"
         type="button"
         @click="$emit('add-work')"
         class="border border-[#7A4D30]/60 hover:border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 py-2.5 px-6 rounded-full text-xs font-bold font-inter transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none flex-shrink-0"

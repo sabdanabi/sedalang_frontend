@@ -10,12 +10,19 @@ interface ProfileData {
   avatar: string
 }
 
-defineProps<{
-  profile: ProfileData
-}>()
+withDefaults(
+  defineProps<{
+    profile: ProfileData
+    isOwnProfile?: boolean
+  }>(),
+  {
+    isOwnProfile: true
+  }
+)
 
 defineEmits<{
   (e: 'edit'): void
+  (e: 'chat'): void
 }>()
 
 const authStore = useAuthStore()
@@ -43,6 +50,7 @@ const handleLogout = () => {
         </div>
         <!-- Camera Edit Overlay Button.svg -->
         <button
+          v-if="isOwnProfile"
           type="button"
           @click="$emit('edit')"
           class="absolute -bottom-2 -right-2 w-11 h-11 cursor-pointer focus:outline-none transition-transform hover:scale-105"
@@ -93,6 +101,7 @@ const handleLogout = () => {
     <div class="flex flex-col sm:flex-row gap-3.5 w-full md:w-auto">
       <!-- Lihat Profil Publik Button -->
       <button
+        v-if="isOwnProfile"
         type="button"
         class="border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 py-2.5 px-6 rounded-full text-xs font-bold font-inter transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none"
       >
@@ -104,6 +113,7 @@ const handleLogout = () => {
 
       <!-- Edit Profil Button -->
       <button
+        v-if="isOwnProfile"
         type="button"
         @click="$emit('edit')"
         class="bg-[#7A4D30] hover:bg-[#683E25] text-white py-2.5 px-6 rounded-full text-xs font-bold font-inter shadow-sm hover:shadow transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none"
@@ -114,8 +124,23 @@ const handleLogout = () => {
         </svg>
       </button>
 
+      <!-- Hubungi Pengrajin Button (When viewing another craftsman's profile) -->
+      <button
+        v-else
+        type="button"
+        @click="$emit('chat')"
+        class="bg-[#7A4D30] hover:bg-[#683E25] text-white py-2.5 px-6 rounded-full text-xs font-bold font-inter shadow-sm hover:shadow transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none"
+      >
+        Hubungi Pengrajin
+        <!-- Message icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 18a5.978 5.978 0 01-.225-2.255C3.302 14.386 2.25 12.025 2.25 9.5 2.25 4.944 6.28 1.25 11 1.25s9 3.694 9 8.25z" />
+        </svg>
+      </button>
+
       <!-- Keluar Button -->
       <button
+        v-if="isOwnProfile"
         type="button"
         @click="handleLogout"
         class="border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 py-2.5 px-6 rounded-full text-xs font-bold font-inter transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none"
