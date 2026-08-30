@@ -6,6 +6,8 @@ const props = defineProps<{
   initialLocation?: string
   initialSpecialty?: string
   initialRating?: string
+  locations?: string[]
+  specialties?: string[]
 }>()
 
 const emit = defineEmits<{
@@ -39,7 +41,7 @@ watch(selectedRating, (newVal) => emit('update:rating', newVal))
       <input
         v-model="searchQuery"
         type="text"
-        placeholder="Search craftsman or technique..."
+        placeholder="Cari pengrajin atau teknik..."
         class="w-full bg-[#FAF8F5]/80 border border-gray-100 focus:border-[#7A4D30]/40 focus:bg-white rounded-2xl py-3.5 pl-12 pr-4 text-xs md:text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-inter"
       />
     </div>
@@ -55,9 +57,7 @@ watch(selectedRating, (newVal) => emit('update:rating', newVal))
           style="background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke-width=%222.5%22 stroke=%22%237A4D30%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19.5 8.25l-7.5 7.5-7.5-7.5%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 0.8rem center; background-size: 0.8rem;"
         >
           <option value="Semua Lokasi">Semua Lokasi</option>
-          <option value="Tembalang">Tembalang</option>
-          <option value="Ngaliyan">Ngaliyan</option>
-          <option value="Pedurungan">Pedurungan</option>
+          <option v-for="loc in locations" :key="loc" :value="loc">{{ loc }}</option>
         </select>
         <!-- Location Icon Overlay -->
         <span class="absolute inset-y-0 left-3.5 flex items-center text-[#7A4D30] pointer-events-none">
@@ -76,9 +76,7 @@ watch(selectedRating, (newVal) => emit('update:rating', newVal))
           style="background-image: url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 fill=%22none%22 viewBox=%220 0 24 24%22 stroke-width=%222.5%22 stroke=%22%237A4D30%22%3E%3Cpath stroke-linecap=%22round%22 stroke-linejoin=%22round%22 d=%22M19.5 8.25l-7.5 7.5-7.5-7.5%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 0.8rem center; background-size: 0.8rem;"
         >
           <option value="Semua Keahlian">Semua Keahlian</option>
-          <option value="Pengrajin Kaca">Pengrajin Kaca</option>
-          <option value="Pengrajin Kayu">Pengrajin Kayu</option>
-          <option value="Pengrajin Besi">Pengrajin Besi</option>
+          <option v-for="spec in specialties" :key="spec" :value="spec">{{ spec }}</option>
         </select>
       </div>
 
