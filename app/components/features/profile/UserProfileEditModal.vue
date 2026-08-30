@@ -7,6 +7,8 @@ interface UserProfile {
   email: string
   phone: string
   avatar: string
+  latitude?: number | null
+  longitude?: number | null
   avatarFile?: File | null
 }
 
@@ -26,6 +28,8 @@ const formEmail = ref('')
 const formPhone = ref('')
 const formAvatar = ref('')
 const selectedAvatarFile = ref<File | null>(null)
+const formLatitude = ref<number | null>(null)
+const formLongitude = ref<number | null>(null)
 
 // Watch changes to populate form
 watch(() => props.profile, (newVal) => {
@@ -36,6 +40,8 @@ watch(() => props.profile, (newVal) => {
     formPhone.value = newVal.phone
     formAvatar.value = newVal.avatar
     selectedAvatarFile.value = null
+    formLatitude.value = newVal.latitude ?? null
+    formLongitude.value = newVal.longitude ?? null
   }
 }, { immediate: true })
 
@@ -69,9 +75,11 @@ const handleGetMyLocation = () => {
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
-      // Mocking lookups to Semarang based coordinates
+      const { latitude, longitude } = position.coords
+      formLatitude.value = latitude
+      formLongitude.value = longitude
       formLocation.value = 'Semarang Tengah, Jawa Tengah'
-      alert('Lokasi dideteksi: Semarang Tengah, Jawa Tengah')
+      alert(`Lokasi terdeteksi! Koordinat: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
     },
     (err) => {
       console.error(err)
@@ -92,7 +100,9 @@ const handleFormSubmit = () => {
     email: formEmail.value.trim(),
     phone: formPhone.value.trim(),
     avatar: formAvatar.value,
-    avatarFile: selectedAvatarFile.value
+    avatarFile: selectedAvatarFile.value,
+    latitude: formLatitude.value,
+    longitude: formLongitude.value
   })
 }
 </script>

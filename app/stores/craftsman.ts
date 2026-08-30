@@ -73,12 +73,42 @@ export const useCraftsmanStore = defineStore('craftsman', () => {
     }
   }
 
+  const getCraftsmanMe = async (): Promise<Craftsman> => {
+    isLoading.value = true
+    errorMessage.value = ''
+    try {
+      const authStore = useAuthStore()
+      let craftsmanId = authStore.user?.craftsman?.id || (authStore.user as any)?.craftsmanId
+
+      if (!craftsmanId) {
+        const userData = await authStore.getMe()
+        craftsmanId = userData?.craftsman?.id || (userData as any)?.craftsmanId
+      }
+
+      if (!craftsmanId) {
+        throw new Error('Akun Anda tidak terdaftar sebagai pengrajin.')
+      }
+
+      const response = await api(`/api/v1/craftsmen/${craftsmanId}`, {
+        method: 'GET'
+      }) as ApiResponse<Craftsman>
+      activeCraftsman.value = response.data
+      return response.data
+    } catch (err: any) {
+      errorMessage.value = err.data?.message || err.message || 'Gagal memuat data profil pengrajin Anda. Silakan coba lagi.'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   return {
     matchedCraftsmen,
     activeCraftsman,
     isLoading,
     errorMessage,
     getMatchedCraftsmen,
-    getCraftsmanById
+    getCraftsmanById,
+    getCraftsmanMe
   }
 })

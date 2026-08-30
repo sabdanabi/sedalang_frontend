@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 
 definePageMeta({
@@ -11,27 +11,32 @@ const authStore = useAuthStore()
 const currentStep = ref(1)
 const selectedRole = ref<'pengguna' | 'pengrajin'>('pengrajin')
 const isLoading = ref(false)
+const isLoadingLocation = ref(false)
 const errorMsg = ref('')
 
 const profileForm = ref({
+  fullName: '',
+  phoneNumber: '',
   location: '',
-  craftType: '',
-  photo: null as File | null
+  skills: '',
+  photo: null as File | null,
+  latitude: null as number | null,
+  longitude: null as number | null
 })
 
-// Material tags for Pengrajin
-const materials = ref([
-  { name: 'Kain Perca', selected: true },
-  { name: 'Elektronik', selected: false },
-  { name: 'Plastik', selected: false },
-  { name: 'Kertas', selected: false },
-  { name: 'Kayu', selected: false },
-  { name: 'Kaca', selected: false }
-])
-
-const toggleMaterial = (index: number) => {
-  materials.value[index].selected = !materials.value[index].selected
-}
+onMounted(async () => {
+  if (!authStore.user) {
+    try {
+      await authStore.getMe()
+    } catch (e) {
+      console.error('Error loading user during onboarding mount:', e)
+    }
+  }
+  if (authStore.user) {
+    profileForm.value.fullName = authStore.user.fullName || ''
+    profileForm.value.phoneNumber = authStore.user.phoneNumber || ''
+  }
+})
 
 // File upload
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -45,6 +50,52 @@ const handleFileChange = (e: Event) => {
   if (target.files && target.files[0]) {
     profileForm.value.photo = target.files[0]
   }
+}
+
+// Geolocation with OSM Nominatim reverse geocoding
+const handleGetMyLocation = () => {
+  if (!navigator.geolocation) {
+    alert('Geolokasi tidak didukung oleh browser Anda.')
+    return
+  }
+
+  isLoadingLocation.value = true
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const { latitude, longitude } = position.coords
+      profileForm.value.latitude = latitude
+      profileForm.value.longitude = longitude
+
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+        )
+        const data = await response.json()
+        if (data && data.address) {
+          const address = data.address
+          const city = address.city || address.town || address.municipality || address.county || ''
+          const road = address.road || ''
+          const neighborhood = address.neighbourhood || address.suburb || ''
+          
+          const formattedParts = [road, neighborhood, city].filter(Boolean)
+          profileForm.value.location = formattedParts.join(', ') || data.display_name
+        } else {
+          profileForm.value.location = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+        }
+      } catch (err) {
+        console.error('Reverse geocoding error:', err)
+        profileForm.value.location = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+      } finally {
+        isLoadingLocation.value = false
+      }
+    },
+    (error) => {
+      console.error('Geolocation acquisition error:', error)
+      alert('Gagal mendapatkan lokasi. Pastikan izin akses lokasi diaktifkan di browser Anda.')
+      isLoadingLocation.value = false
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  )
 }
 
 // Step 1: Select role and proceed
@@ -73,12 +124,13 @@ const handleNextStep = async () => {
 
 // Step 2: Submit craftsman onboarding
 const handleConfirm = async () => {
-  const selectedSkills = materials.value
-    .filter(m => m.selected)
-    .map(m => m.name)
+  if (!profileForm.value.fullName.trim()) {
+    errorMsg.value = 'Nama wajib diisi.'
+    return
+  }
 
-  if (selectedSkills.length === 0) {
-    errorMsg.value = 'Pilih minimal satu material yang Anda terima.'
+  if (!profileForm.value.phoneNumber.trim()) {
+    errorMsg.value = 'No. telepon wajib diisi.'
     return
   }
 
@@ -87,16 +139,32 @@ const handleConfirm = async () => {
     return
   }
 
+  if (!profileForm.value.skills.trim()) {
+    errorMsg.value = 'Keahlian wajib diisi.'
+    return
+  }
+
   isLoading.value = true
   errorMsg.value = ''
 
   try {
+    // 1. Update user general info (fullName & phoneNumber)
+    await authStore.updateUserProfile({
+      fullName: profileForm.value.fullName,
+      phoneNumber: profileForm.value.phoneNumber
+    })
+
+    // 2. Complete craftsman onboarding (location, skills, coordinates, portfolio)
     const formData = new FormData()
     formData.append('location', profileForm.value.location)
-    formData.append('skills', selectedSkills.join(', '))
+    formData.append('skills', profileForm.value.skills)
+    formData.append('craftType', profileForm.value.skills)
 
-    if (profileForm.value.craftType.trim()) {
-      formData.append('craftType', profileForm.value.craftType)
+    if (profileForm.value.latitude != null) {
+      formData.append('latitude', String(profileForm.value.latitude))
+    }
+    if (profileForm.value.longitude != null) {
+      formData.append('longitude', String(profileForm.value.longitude))
     }
 
     if (profileForm.value.photo) {
@@ -243,64 +311,80 @@ const goBack = () => {
 
         <!-- STEP 2: PROFILE FORM (Only for Pengrajin) -->
         <div v-else class="flex flex-col space-y-6">
-          <div>
-            <h1 class="font-poppins text-2xl font-bold text-gray-950 tracking-tight">
-              Profil Pengrajin Anda
-            </h1>
-            <p class="font-inter text-sm text-gray-500 mt-1 leading-relaxed">
-              Lengkapi informasi profil anda untuk mulai menerima permintaan kerja dari pengguna SeDaLang.
-            </p>
-          </div>
-
           <!-- Form Grid -->
-          <form class="space-y-4">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form @submit.prevent="handleConfirm" class="space-y-6">
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Nama -->
+              <div class="flex flex-col gap-1.5 text-left">
+                <label class="font-poppins text-xs font-bold text-gray-800">Nama</label>
+                <input
+                  v-model="profileForm.fullName"
+                  type="text"
+                  placeholder="Masukkan nama"
+                  required
+                  class="w-full bg-white border border-gray-200 hover:border-gray-300 focus:border-[#7A4D30]/60 rounded-xl py-3 px-4 text-xs md:text-sm text-gray-800 outline-none transition-all font-inter"
+                />
+              </div>
+
+              <!-- No.telepon -->
+              <div class="flex flex-col gap-1.5 text-left">
+                <label class="font-poppins text-xs font-bold text-gray-800">No.telepon</label>
+                <input
+                  v-model="profileForm.phoneNumber"
+                  type="text"
+                  placeholder="Masukkan no. telepon"
+                  required
+                  class="w-full bg-white border border-gray-200 hover:border-gray-300 focus:border-[#7A4D30]/60 rounded-xl py-3 px-4 text-xs md:text-sm text-gray-800 outline-none transition-all font-inter"
+                />
+              </div>
+
               <!-- Lokasi -->
-              <div class="flex flex-col space-y-1.5">
-                <label class="font-poppins text-xs font-bold text-gray-900">Lokasi</label>
-                <input 
+              <div class="flex flex-col gap-1.5 text-left">
+                <label class="font-poppins text-xs font-bold text-gray-800">Lokasi</label>
+                <input
                   v-model="profileForm.location"
-                  type="text" 
-                  placeholder="Contoh: Sleman, Yogyakarta"
-                  class="border border-gray-200 rounded-[14px] px-4 py-3 text-sm focus:border-[#7F5539] focus:outline-none transition-colors"
+                  type="text"
+                  placeholder="Masukkan lokasi"
+                  required
+                  class="w-full bg-white border border-gray-200 hover:border-gray-300 focus:border-[#7A4D30]/60 rounded-xl py-3 px-4 text-xs md:text-sm text-gray-800 outline-none transition-all font-inter"
                 />
               </div>
 
-              <!-- Jenis Pengrajin -->
-              <div class="flex flex-col space-y-1.5">
-                <label class="font-poppins text-xs font-bold text-gray-900">Jenis Pengrajin</label>
-                <input 
-                  v-model="profileForm.craftType"
-                  type="text" 
-                  placeholder="Contoh: Pengrajin Kayu & Furnitur"
-                  class="border border-gray-200 rounded-[14px] px-4 py-3 text-sm focus:border-[#7F5539] focus:outline-none transition-colors"
+              <!-- Keahlian -->
+              <div class="flex flex-col gap-1.5 text-left">
+                <label class="font-poppins text-xs font-bold text-gray-800">Keahlian</label>
+                <input
+                  v-model="profileForm.skills"
+                  type="text"
+                  placeholder="Masukkan Keahlian"
+                  required
+                  class="w-full bg-white border border-gray-200 hover:border-gray-300 focus:border-[#7A4D30]/60 rounded-xl py-3 px-4 text-xs md:text-sm text-gray-800 outline-none transition-all font-inter"
                 />
               </div>
             </div>
 
-            <!-- Material yang diterima -->
-            <div class="flex flex-col space-y-1.5 pt-2">
-              <label class="font-poppins text-xs font-bold text-gray-900">Material yang diterima</label>
-              <div class="flex flex-wrap gap-2.5">
-                <button
-                  v-for="(material, index) in materials"
-                  :key="material.name"
-                  @click="toggleMaterial(index)"
-                  type="button"
-                  class="px-4 py-2.5 rounded-full border text-xs font-semibold font-poppins transition-all duration-200 cursor-pointer focus:outline-none"
-                  :class="[
-                    material.selected
-                      ? 'border-[#7F5539] text-[#7F5539] bg-[#7F553912]'
-                      : 'border-gray-200 text-gray-700 hover:border-gray-300 bg-white'
-                  ]"
-                >
-                  {{ material.name }}
-                </button>
-              </div>
-            </div>
+            <!-- Buttons Row -->
+            <div class="grid grid-cols-2 gap-4 pt-2">
+              <!-- Geolocation Button -->
+              <button
+                type="button"
+                @click="handleGetMyLocation"
+                :disabled="isLoadingLocation"
+                class="w-full border border-[#835338] text-[#835338] hover:bg-[#835338]/5 py-3 rounded-full text-xs md:text-sm font-bold font-inter transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none disabled:opacity-60"
+              >
+                <!-- Location pin icon -->
+                <svg v-if="!isLoadingLocation" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-[#835338]">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                </svg>
+                <svg v-else class="animate-spin h-4 w-4 text-[#835338]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>{{ isLoadingLocation ? 'Mencari...' : 'Lokasi Saya' }}</span>
+              </button>
 
-            <!-- Upload Photo Bar -->
-            <div class="flex flex-col space-y-1.5 pt-2">
+              <!-- Photo Upload Button -->
               <input 
                 ref="fileInput" 
                 type="file" 
@@ -308,17 +392,17 @@ const goBack = () => {
                 class="hidden" 
                 @change="handleFileChange"
               />
-              <button 
-                @click="triggerFileUpload"
+              <button
                 type="button"
-                class="w-full flex items-center justify-between border border-[#7F5539] rounded-[20px] px-5 py-4 cursor-pointer text-[#7F5539] hover:bg-[#7F553912] transition-colors focus:outline-none font-poppins text-sm font-semibold"
+                @click="triggerFileUpload"
+                class="w-full border border-[#835338] text-[#835338] hover:bg-[#835338]/5 py-3 rounded-full text-xs md:text-sm font-bold font-inter transition-all duration-300 flex items-center justify-between px-6 cursor-pointer focus:outline-none"
               >
-                <div class="flex items-center gap-2">
-                  <span class="text-lg">+</span>
-                  <span>{{ profileForm.photo ? profileForm.photo.name : 'Tambahkan foto portofolio' }}</span>
+                <div class="flex items-center gap-1.5 min-w-0">
+                  <span class="text-base font-semibold flex-shrink-0">+</span>
+                  <span class="truncate">{{ profileForm.photo ? profileForm.photo.name : 'Tambahkan foto' }}</span>
                 </div>
-                <!-- Paper Plane Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 transform rotate-45">
+                <!-- Paper plane/share icon rotated -->
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#835338] transform rotate-45 flex-shrink-0">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                 </svg>
               </button>
@@ -345,38 +429,25 @@ const goBack = () => {
           {{ isLoading ? 'Memproses...' : `Lanjut Sebagai ${selectedRole === 'pengguna' ? 'Pengguna' : 'Pengrajin'}` }}
         </button>
 
-        <!-- Step 2 Buttons (Kembali & Simpan Data) -->
-        <div v-else class="grid grid-cols-2 gap-4">
-          <!-- Kembali Button -->
-          <button 
-            @click="goBack"
-            type="button"
-            :disabled="isLoading"
-            class="w-full border border-[#7F5539] text-[#7F5539] bg-white hover:bg-[#7F553912] font-poppins font-semibold py-4 rounded-[20px] transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <span>Kembali</span>
+        <!-- Step 2 Button (Konfirmasi) -->
+        <button 
+          v-else
+          @click="handleConfirm"
+          type="button"
+          :disabled="isLoading"
+          class="w-full bg-[#835338] hover:bg-[#6e432c] text-white font-poppins font-semibold py-4 rounded-full transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-sm focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed text-sm"
+        >
+          <svg v-if="isLoading" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span v-else class="flex items-center gap-1.5 font-bold font-poppins">
+            Konfirmasi
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
             </svg>
-          </button>
-
-          <!-- Simpan Data Button -->
-          <button 
-            @click="handleConfirm"
-            type="button"
-            :disabled="isLoading"
-            class="w-full bg-[#7F5539] hover:bg-[#66432c] text-white font-poppins font-semibold py-4 rounded-[20px] transition-colors duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-sm focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <svg v-if="isLoading" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>{{ isLoading ? 'Menyimpan...' : 'Simpan Data' }}</span>
-            <svg v-if="!isLoading" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-            </svg>
-          </button>
-        </div>
+          </span>
+        </button>
 
       </div>
 

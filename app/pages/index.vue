@@ -1,15 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
-// Search query for craftsman input
-const searchQuery = ref('')
-
-// Form search submission handler
-const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    alert(`Searching for craftsman: "${searchQuery.value}"`)
-  } else {
-    alert('Please enter a craftsman name or capability.')
+// Scroll to about section
+const scrollToAbout = () => {
+  const aboutSection = document.getElementById('about')
+  if (aboutSection) {
+    aboutSection.scrollIntoView({ behavior: 'smooth' })
   }
 }
 
@@ -49,24 +43,16 @@ const selectTag = (tagName: string) => {
           with the help of AI and local MSME artisans in Semarang.
         </p>
 
-        <!-- Craftsman Search / Tracking Input Box -->
-        <form 
-          @submit.prevent="handleSearch"
-          class="w-full max-w-lg bg-white border border-gray-200 hover:border-[#7A4D30]/30 focus-within:border-[#7A4D30] focus-within:ring-2 focus-within:ring-[#7A4D30]/10 rounded-full p-1.5 pl-6 shadow-sm hover:shadow transition-all duration-300 flex items-center gap-2 mb-16"
+        <!-- Mulai Button -->
+        <button
+          @click="scrollToAbout"
+          class="bg-[#7A4D30] hover:bg-[#6A3F25] active:scale-[0.97] text-white px-10 py-4 rounded-full text-base md:text-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg mb-16 font-inter flex items-center gap-2 group"
         >
-          <input 
-            type="text" 
-            v-model="searchQuery"
-            placeholder="Looking for a craftsman"
-            class="flex-grow bg-transparent text-sm md:text-base text-gray-800 placeholder-gray-400 outline-none w-full font-inter"
-          />
-          <button 
-            type="submit"
-            class="bg-[#7A4D30] hover:bg-[#6A3F25] text-white px-6 py-3 rounded-full text-sm md:text-base font-semibold whitespace-nowrap transition-all duration-200 active:scale-[0.98] shadow-sm font-inter"
-          >
-            Tracking craftsman
-          </button>
-        </form>
+          Mulai
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-transform duration-200 group-hover:translate-y-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
 
         <!-- Bottom Highlights List -->
         <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-3 text-sm md:text-base font-medium text-gray-800 font-inter">
@@ -100,8 +86,10 @@ const selectTag = (tagName: string) => {
       </div>
     </div>
 
-    <!-- Explore Section -->
-    <FeaturesLandingExploreSection />
+    <!-- Explore Section (About anchor) -->
+    <div id="about">
+      <FeaturesLandingExploreSection />
+    </div>
 
     <!-- Ways of Working Section -->
     <FeaturesLandingWaysOfWorkingSection />

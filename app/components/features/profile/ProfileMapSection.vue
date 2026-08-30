@@ -7,53 +7,30 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 // Set the Maplibre worker URL
 maplibregl.setWorkerUrl(workerUrl)
 
-const props = defineProps<{
-  location?: string
-  latitude?: number | null
-  longitude?: number | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    location?: string
+    latitude?: number | null
+    longitude?: number | null
+    isOwnProfile?: boolean
+  }>(),
+  {
+    isOwnProfile: true
+  }
+)
 
 const mapContainer = ref<HTMLElement | null>(null)
 let mapInstance: maplibregl.Map | null = null
 let markerInstance: maplibregl.Marker | null = null
 
-const currentCoords = ref<[number, number]>([110.4208, -6.9806]) // Semarang center coordinates
-
-const getCoordsFromLocation = (locStr: string): [number, number] => {
-  const normalized = locStr.toLowerCase()
-  if (normalized.includes('tembalang')) return [110.4381, -7.0507]
-  if (normalized.includes('pedurungan')) return [110.4704, -7.0069]
-  if (normalized.includes('ngaliyan')) return [110.3340, -7.0135]
-  if (normalized.includes('banyumanik')) return [110.4262, -7.0658]
-  if (normalized.includes('gunungpati')) return [110.3662, -7.0864]
-  if (normalized.includes('mijen')) return [110.3164, -7.0610]
-  if (normalized.includes('tugu')) return [110.3013, -6.9749]
-  if (normalized.includes('genuk')) return [110.4795, -6.9634]
-  if (normalized.includes('gajahmungkur')) return [110.4140, -7.0152]
-  if (normalized.includes('candisari')) return [110.4312, -7.0205]
-  if (normalized.includes('tengah')) return [110.4208, -6.9806]
-  if (normalized.includes('utara')) return [110.4190, -6.9535]
-  if (normalized.includes('selatan')) return [110.4222, -6.9961]
-  if (normalized.includes('barat')) return [110.3857, -6.9897]
-  if (normalized.includes('timur')) return [110.4398, -6.9790]
-  
-  return [110.4208, -6.9806]
-}
+const currentCoords = ref<[number, number]>([
+  props.longitude != null ? Number(props.longitude) : 110.4208,
+  props.latitude != null ? Number(props.latitude) : -6.9806
+])
 
 const updateCoordsFromProp = () => {
   if (props.latitude != null && props.longitude != null) {
     const coords: [number, number] = [Number(props.longitude), Number(props.latitude)]
-    currentCoords.value = coords
-    if (mapInstance && markerInstance) {
-      mapInstance.flyTo({
-        center: coords,
-        zoom: 14,
-        essential: true
-      })
-      markerInstance.setLngLat(coords)
-    }
-  } else if (props.location) {
-    const coords = getCoordsFromLocation(props.location)
     currentCoords.value = coords
     if (mapInstance && markerInstance) {
       mapInstance.flyTo({
@@ -162,6 +139,7 @@ const handleCompareLocation = () => {
 
       <!-- Compare Location Trigger -->
       <button
+        v-if="!isOwnProfile"
         type="button"
         @click="handleCompareLocation"
         class="border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 py-2.5 px-6 rounded-full text-xs font-bold font-inter transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none flex-shrink-0"

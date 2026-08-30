@@ -10,6 +10,9 @@ export interface User {
   phoneNumber?: string | null
   role: 'USER' | 'CRAFTSMAN'
   avatarUrl?: string | null
+  location?: string | null
+  latitude?: number | null
+  longitude?: number | null
   createdAt: string
 }
 
@@ -168,7 +171,13 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // Update craftsman details
-  const updateCraftsmanProfile = async (data: { location: string; craftType: string; skills: string }) => {
+  const updateCraftsmanProfile = async (data: { 
+    location: string; 
+    craftType: string; 
+    skills: string;
+    latitude?: number | null;
+    longitude?: number | null;
+  }) => {
     const response = await api('/api/v1/craftsmen/me', {
       method: 'PATCH',
       body: data
@@ -179,7 +188,11 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   // Update general user profile details (name, phone, and avatar file)
-  const updateUserProfile = async (data: { fullName: string; phoneNumber?: string; avatarFile?: File | null }) => {
+  const updateUserProfile = async (data: { 
+    fullName: string; 
+    phoneNumber?: string; 
+    avatarFile?: File | null;
+  }) => {
     const config = useRuntimeConfig()
     const baseURL = config.public.apiBase as string
     

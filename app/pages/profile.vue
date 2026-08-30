@@ -44,13 +44,13 @@ const loadProfile = async () => {
 
       profile.value = {
         name: userData.fullName || '',
-        location: (userData.craftsman as any)?.location || 'Semarang Tengah, Jawa Tengah',
+        location: userData.location || 'Semarang Tengah, Jawa Tengah',
         email: userData.email || '',
         phone: userData.phoneNumber || '',
         avatar: getAvatarUrl(userData.avatarUrl, userData.fullName || 'User'),
         role: 'Pengguna',
-        latitude: (userData.craftsman as any)?.latitude,
-        longitude: (userData.craftsman as any)?.longitude
+        latitude: userData.latitude,
+        longitude: userData.longitude
       }
 
       // Check if user has saved profile edits in local storage

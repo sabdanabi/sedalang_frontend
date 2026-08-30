@@ -8,6 +8,8 @@ interface ProfileData {
   projectsCount: number
   avatar: string
   skills: string[]
+  latitude?: number | null
+  longitude?: number | null
   avatarFile?: File | null
 }
 
@@ -29,6 +31,8 @@ const formAvatar = ref('')
 const formSkills = ref<string[]>([])
 const newSkillInput = ref('')
 const selectedAvatarFile = ref<File | null>(null)
+const formLatitude = ref<number | null>(null)
+const formLongitude = ref<number | null>(null)
 
 // Watch changes to populate form
 watch(() => props.profile, (newVal) => {
@@ -40,6 +44,8 @@ watch(() => props.profile, (newVal) => {
     formAvatar.value = newVal.avatar
     formSkills.value = [...(newVal.skills || [])]
     selectedAvatarFile.value = null
+    formLatitude.value = newVal.latitude ?? null
+    formLongitude.value = newVal.longitude ?? null
   }
 }, { immediate: true })
 
@@ -73,9 +79,11 @@ const handleGetMyLocation = () => {
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
-      // Mocking lookups to Semarang based coordinates
+      const { latitude, longitude } = position.coords
+      formLatitude.value = latitude
+      formLongitude.value = longitude
       formLocation.value = 'Pedurungan, Semarang'
-      alert('Lokasi dideteksi: Pedurungan, Semarang')
+      alert(`Lokasi terdeteksi! Koordinat: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
     },
     (err) => {
       console.error(err)
@@ -112,7 +120,9 @@ const handleFormSubmit = () => {
     projectsCount: Number(formProjects.value) || 0,
     avatar: formAvatar.value,
     skills: formSkills.value,
-    avatarFile: selectedAvatarFile.value
+    avatarFile: selectedAvatarFile.value,
+    latitude: formLatitude.value,
+    longitude: formLongitude.value
   })
 }
 </script>

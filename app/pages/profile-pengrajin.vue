@@ -35,21 +35,15 @@ const authStore = useAuthStore()
 const route = useRoute()
 const craftsmanStore = useCraftsmanStore()
 
-// Reactive States (initially populated with dummy data, overwritten upon API load)
+// Reactive States (initially populated with safe empty/loading defaults, overwritten upon API load)
 const profile = ref<ProfileData>({
-  name: 'Karyaloka Craft',
-  description: 'Karyaloka Craft',
-  location: 'Semarang Tengah, Jawa Tengah',
-  rating: 4.9,
-  projectsCount: 24,
+  name: '',
+  description: '',
+  location: '',
+  rating: 0,
+  projectsCount: 0,
   avatar: '/images/landing_page_images/default_pp.webp',
-  skills: [
-    'Botol Kaca',
-    'Kaca Bekas',
-    'Dekorasi Rumah',
-    'Lampu Dekoratif',
-    'Upcycling'
-  ],
+  skills: [],
   latitude: null,
   longitude: null
 })
@@ -103,80 +97,58 @@ const loadProfile = async () => {
         return
       }
 
-      const craftsman = userData.craftsman as any
-      profile.value = {
-        name: userData.fullName || '',
-        description: craftsman?.craftType || 'Pengrajin',
-        location: craftsman?.location || 'Semarang Tengah, Jawa Tengah',
-        rating: craftsman?.rating || 4.9,
-        projectsCount: craftsman?.projectsCount || 24,
-        avatar: getAvatarUrl(userData.avatarUrl, userData.fullName || 'User'),
-        skills: typeof craftsman?.skills === 'string'
-          ? craftsman.skills.split(',').map((s: string) => s.trim()).filter(Boolean)
-          : (Array.isArray(craftsman?.skills) ? craftsman.skills : []),
-        latitude: craftsman?.latitude,
-        longitude: craftsman?.longitude
-      }
-
-      // Check if artisan profile is also saved in localStorage to merge local edits
-      const savedProfile = localStorage.getItem(`sedalang_artisan_profile_${userData.id}`)
-      if (savedProfile) {
-        try {
-          const parsed = JSON.parse(savedProfile)
-          profile.value = {
-            ...profile.value,
-            ...parsed
-          }
-        } catch (e) {
-          console.error('Error parsing local artisan profile:', e)
+      const craftsman = await craftsmanStore.getCraftsmanMe()
+      if (craftsman) {
+        profile.value = {
+          name: craftsman.user?.fullName || userData.fullName || '',
+          description: craftsman.craftType || 'Pengrajin',
+          location: craftsman.location || 'Semarang Tengah, Jawa Tengah',
+          rating: craftsman.averageRating || 4.9,
+          projectsCount: craftsman.completedOrdersCount || 24,
+          avatar: getAvatarUrl(craftsman.user?.avatarUrl || userData.avatarUrl, craftsman.user?.fullName || userData.fullName || 'User'),
+          skills: typeof craftsman.skills === 'string'
+            ? (craftsman.skills as string).split(',').map((s: string) => s.trim()).filter(Boolean)
+            : (Array.isArray(craftsman.skills) ? craftsman.skills : []),
+          latitude: craftsman.latitude,
+          longitude: craftsman.longitude
         }
-      }
 
-      // Load works from API/craftsman portfolios
-      const apiWorks = craftsman?.portfolios || craftsman?.works || craftsman?.portfolio
-      if (apiWorks) {
-        if (Array.isArray(apiWorks)) {
-          works.value = apiWorks.map((w: any, index: number) => {
-            if (typeof w === 'string') {
-              return {
-                id: index + 1,
-                title: `Karya ${index + 1}`,
-                description: `Portofolio karya pengrajin ${profile.value.name}`,
-                image: w
-              }
-            } else {
-              return {
-                id: w.id || (index + 1),
-                title: w.title || `Karya ${index + 1}`,
-                description: w.description || `Deskripsi karya`,
-                image: w.image || w.imageUrl || '/images/default_images/default_img.webp'
-              }
-            }
-          })
-        } else if (typeof apiWorks === 'string') {
-          works.value = [
-            {
-              id: 1,
-              title: 'Karya Portofolio',
-              description: `Portofolio karya pengrajin ${profile.value.name}`,
-              image: apiWorks
-            }
-          ]
-        } else {
-          works.value = []
-        }
-      } else {
-        // Fallback to local storage if available, otherwise empty to remove dummy data
-        const savedWorks = localStorage.getItem(`sedalang_artisan_works_${userData.id}`)
-        if (savedWorks) {
+        // Check if artisan profile is also saved in localStorage to merge local edits
+        const savedProfile = localStorage.getItem(`sedalang_artisan_profile_${userData.id}`)
+        if (savedProfile) {
           try {
-            works.value = JSON.parse(savedWorks)
+            const parsed = JSON.parse(savedProfile)
+            profile.value = {
+              ...profile.value,
+              ...parsed
+            }
           } catch (e) {
-            console.error('Error parsing local artisan works:', e)
+            console.error('Error parsing local artisan profile:', e)
+          }
+        }
+
+        // Load works from API/craftsman portfolios
+        const apiWorks = craftsman.portfolioUrls || []
+        if (apiWorks.length > 0) {
+          works.value = apiWorks.map((w: string, index: number) => ({
+            id: index + 1,
+            title: `Karya ${index + 1}`,
+            description: `Portofolio karya pengrajin ${profile.value.name}`,
+            image: w
+          }))
+        } else {
+          // Fallback to local storage if available, otherwise empty to remove dummy data
+          const savedWorks = localStorage.getItem(`sedalang_artisan_works_${userData.id}`)
+          if (savedWorks) {
+            try {
+              works.value = JSON.parse(savedWorks)
+            } catch (e) {
+              console.error('Error parsing local artisan works:', e)
+              works.value = []
+            }
+          } else {
             works.value = []
           }
-        } else {
-          works.value = []
         }
       }
     }
@@ -185,18 +157,15 @@ const loadProfile = async () => {
   }
 }
 
-// Onboarding validation
-onMounted(() => {
-  if (import.meta.client) {
-    const completed = localStorage.getItem('sedalang_onboarding_completed')
-    if (!completed) {
-      navigateTo('/onboarding')
-      return
-    }
-
+// Onboarding validation & immediate profile load (in client setup)
+if (import.meta.client) {
+  const completed = localStorage.getItem('sedalang_onboarding_completed')
+  if (!completed) {
+    navigateTo('/onboarding')
+  } else {
     loadProfile()
   }
-})
+}
 
 const handleContactCraftsman = async () => {
   let finalIdeaId = route.query.ideaId as string
@@ -260,7 +229,9 @@ const handleEditProfileSubmit = async (updatedData: ProfileData) => {
     await authStore.updateCraftsmanProfile({
       location: updatedData.location,
       craftType: updatedData.description,
-      skills: updatedData.skills.join(', ')
+      skills: updatedData.skills.join(', '),
+      latitude: updatedData.latitude,
+      longitude: updatedData.longitude
     })
 
     showEditModal.value = false
@@ -322,6 +293,7 @@ const handleViewWorkDetail = (item: WorkItem) => {
         :location="profile.location" 
         :latitude="profile.latitude"
         :longitude="profile.longitude"
+        :isOwnProfile="isOwnProfile"
       />
 
       <!-- Portfolio works gallery grid -->
