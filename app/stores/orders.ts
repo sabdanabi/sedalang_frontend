@@ -108,6 +108,37 @@ export const useOrdersStore = defineStore('orders', () => {
     }
   }
 
+  // POST /api/v1/orders/{orderId}/media
+  const uploadOrderMedia = async (orderId: string, imageFile: File): Promise<Order> => {
+    const config = useRuntimeConfig()
+    const tokenCookie = useCookie<string | null>('sedalang_token')
+    const baseURL = config.public.apiBase as string
+    
+    const formData = new FormData()
+    formData.append('images', imageFile) // Using standard 'images' multipart key
+    
+    isLoading.value = true
+    error.value = ''
+    try {
+      const res = await $fetch(`/api/v1/orders/${orderId}/media`, {
+        baseURL,
+        method: 'POST',
+        body: formData,
+        headers: {
+          ...(tokenCookie.value ? { Authorization: `Bearer ${tokenCookie.value}` } : {})
+        }
+      }) as ApiResponse<Order>
+      activeOrder.value = res.data
+      return res.data
+    } catch (err: any) {
+      error.value = err.data?.message || err.message || 'Gagal mengunggah media progres.'
+      console.error('Error uploading order media:', err)
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   return {
     orders,
     activeOrder,
@@ -115,6 +146,7 @@ export const useOrdersStore = defineStore('orders', () => {
     isDetailLoading,
     error,
     fetchOrders,
-    fetchOrderById
+    fetchOrderById,
+    uploadOrderMedia
   }
 })

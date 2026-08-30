@@ -172,8 +172,17 @@ const billing = computed(() => {
 const showAddModal = ref(false)
 const showGalleryModal = ref(false)
 
-const handleAddProgress = (formData: { title: string; description: string; status: string }) => {
+const handleAddProgress = async (formData: { title: string; description: string; status: string; imageFile: File | null }) => {
   showAddModal.value = false
+
+  // Upload progress image to backend if provided
+  if (formData.imageFile && orderId && orderId !== 'LMD95628654') {
+    try {
+      await ordersStore.uploadOrderMedia(orderId, formData.imageFile)
+    } catch (err: any) {
+      alert('Gagal mengunggah foto progres ke server: ' + (err.message || err))
+    }
+  }
 
   // Save order status
   if (import.meta.client) {

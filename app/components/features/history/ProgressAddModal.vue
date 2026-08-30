@@ -7,12 +7,32 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'submit', data: { title: string; description: string; status: string }): void
+  (e: 'submit', data: { title: string; description: string; status: string; imageFile: File | null }): void
 }>()
 
 const progressTitle = ref('')
 const progressDesc = ref('')
 const progressStatus = ref('Pending')
+
+const selectedFile = ref<File | null>(null)
+const previewUrl = ref<string | null>(null)
+
+const handleFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    const file = target.files[0]
+    selectedFile.value = file
+    previewUrl.value = URL.createObjectURL(file)
+  }
+}
+
+const removeFile = () => {
+  selectedFile.value = null
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value)
+    previewUrl.value = null
+  }
+}
 
 const handleFormSubmit = () => {
   if (!progressTitle.value.trim() || !progressDesc.value.trim()) {
@@ -23,13 +43,15 @@ const handleFormSubmit = () => {
   emit('submit', {
     title: progressTitle.value.trim(),
     description: progressDesc.value.trim(),
-    status: progressStatus.value
+    status: progressStatus.value,
+    imageFile: selectedFile.value
   })
 
   // Clear inputs
   progressTitle.value = ''
   progressDesc.value = ''
   progressStatus.value = 'Pending'
+  removeFile()
 }
 </script>
 
@@ -102,6 +124,49 @@ const handleFormSubmit = () => {
                 <option value="In Progress">In Progress</option>
                 <option value="Complete">Complete</option>
               </select>
+            </div>
+
+            <!-- Unggah Gambar Progres (Opsional) -->
+            <div class="flex flex-col gap-1.5 text-left">
+              <label class="font-poppins text-xs font-bold text-gray-950">Foto Progres (Opsional)</label>
+              
+              <!-- File selector trigger -->
+              <div 
+                v-if="!previewUrl"
+                class="border-2 border-dashed border-gray-200 hover:border-[#7A4D30]/40 rounded-2xl p-4 flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors bg-[#FAF8F5]/40"
+                @click="($refs.fileInput as HTMLInputElement).click()"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-gray-400">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                </svg>
+                <span class="font-inter text-xs text-gray-500 font-medium">Klik untuk pilih gambar</span>
+                <input 
+                  ref="fileInput"
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="handleFileChange"
+                />
+              </div>
+
+              <!-- File preview with remove button -->
+              <div 
+                v-else
+                class="relative rounded-2xl overflow-hidden border border-gray-100 h-32 w-full bg-gray-50"
+              >
+                <img :src="previewUrl" class="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  @click="removeFile"
+                  class="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white transition-colors cursor-pointer focus:outline-none"
+                  title="Hapus"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
 
             <!-- Submit Button (Solid brown, full-width) -->
