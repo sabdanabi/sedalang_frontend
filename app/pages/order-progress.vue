@@ -147,12 +147,27 @@ const steps = computed<TimelineStep[]>({
 // Photos Gallery
 const photos = computed<string[]>(() => {
   const activeOrder = ordersStore.activeOrder
+  
+  // 1. Gathers media from progressSteps
   if (activeOrder?.progressSteps) {
     const urls = activeOrder.progressSteps
       .flatMap(s => s.mediaUrls || [])
       .filter(Boolean)
     if (urls.length > 0) return urls
   }
+
+  // 2. Fallback to direct media properties on the order object if present
+  const rawOrder = activeOrder as any
+  if (rawOrder?.mediaUrls && Array.isArray(rawOrder.mediaUrls)) {
+    const urls = rawOrder.mediaUrls.filter(Boolean)
+    if (urls.length > 0) return urls
+  }
+
+  if (rawOrder?.media && Array.isArray(rawOrder.media)) {
+    const urls = rawOrder.media.filter(Boolean)
+    if (urls.length > 0) return urls
+  }
+
   return ['/images/default_images/default_img.webp']
 })
 
