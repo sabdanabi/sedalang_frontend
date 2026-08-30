@@ -1,15 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useChatStore } from '~/stores/chat'
+import { useAuthStore } from '~/stores/auth'
+import { navigateTo } from '#app'
 
 definePageMeta({
   layout: 'dashboard'
 })
 
 const route = useRoute()
+const chatStore = useChatStore()
+const authStore = useAuthStore()
 
-// Check onboarding completed and load persisted chats on mount
-onMounted(() => {
+const showProposalModal = ref(false)
+
+onMounted(async () => {
   if (import.meta.client) {
     const completed = localStorage.getItem('sedalang_onboarding_completed')
     if (!completed) {
@@ -17,225 +23,105 @@ onMounted(() => {
       return
     }
 
-    const saved = localStorage.getItem('sedalang_conversations')
-    if (saved) {
+    // Initialize current user state if not loaded
+    if (!authStore.user) {
       try {
-        conversations.value = JSON.parse(saved)
-      } catch (e) {
-        console.error('Failed to parse conversations data', e)
+        await authStore.getMe()
+      } catch (err) {
+        console.error('Failed to get current user details:', err)
       }
     }
-    
-    // Check if query parameter "craftsman" is specified
+
+    // Initialize socket connection
+    chatStore.initializeSocket()
+
+    // Load active rooms list
+    try {
+      await chatStore.fetchRooms()
+    } catch (err) {
+      console.error('Failed to fetch rooms:', err)
+    }
+
+    // Auto-initiate room if query params exist
+    const craftsmanId = route.query.craftsmanId as string
+    const ideaId = route.query.ideaId as string
     const craftsmanParam = route.query.craftsman as string
-    if (craftsmanParam) {
-      const existing = conversations.value.find(c => 
-        c.name.toLowerCase().includes(craftsmanParam.toLowerCase()) || 
-        c.subtitle.toLowerCase().includes(craftsmanParam.toLowerCase())
-      )
 
-      if (existing) {
-        activeConversationId.value = existing.id
-      } else {
-        const newId = conversations.value.length > 0 ? Math.max(...conversations.value.map(c => c.id)) + 1 : 1
-        const newConvo: Conversation = {
-          id: newId,
-          name: craftsmanParam,
-          subtitle: 'Craftsman • Online',
-          latestMessage: 'Halo! Saya tertarik memesan jasa Anda.',
-          statusText: 'Dalam diskusi',
-          statusColor: 'text-[#7A4D30]',
-          statusBg: 'bg-[#7A4D30]/5 border border-[#7A4D30]/20',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          avatar: '/images/landing_page_images/default_pp.webp',
-          online: true,
-          messages: [
-            {
-              id: Date.now(),
-              text: 'Halo! Saya tertarik untuk bekerja sama dalam mendaur ulang material saya. Bisakah kita berdiskusi?',
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              isOutgoing: true
-            }
-          ]
-        }
-        conversations.value.unshift(newConvo)
-        activeConversationId.value = newId
-        saveConversations()
+    if (craftsmanId && ideaId) {
+      try {
+        const room = await chatStore.createOrGetRoom(craftsmanId, ideaId)
+        chatStore.joinRoom(room.id)
+        await chatStore.fetchMessages(room.id)
+      } catch (err) {
+        console.error('Failed to auto-initiate chat room:', err)
+      }
+    } else if (craftsmanParam) {
+      // Find existing room matching the craftsman name
+      const room = chatStore.rooms.find(r => 
+        (r.craftsman?.user?.fullName || '').toLowerCase().includes(craftsmanParam.toLowerCase()) ||
+        (r.user?.fullName || '').toLowerCase().includes(craftsmanParam.toLowerCase())
+      )
+      if (room) {
+        chatStore.joinRoom(room.id)
+        await chatStore.fetchMessages(room.id)
+      } else if (chatStore.rooms.length > 0) {
+        const firstRoom = chatStore.rooms[0]
+        chatStore.joinRoom(firstRoom.id)
+        await chatStore.fetchMessages(firstRoom.id)
+      }
+    } else {
+      // Default select the first room if any
+      if (chatStore.rooms.length > 0) {
+        const firstRoom = chatStore.rooms[0]
+        chatStore.joinRoom(firstRoom.id)
+        await chatStore.fetchMessages(firstRoom.id)
       }
     }
-
-    // Sync active conversation reference
-    syncActiveConversation()
   }
 })
 
-// Save helper
-const saveConversations = () => {
-  if (import.meta.client) {
-    localStorage.setItem('sedalang_conversations', JSON.stringify(conversations.value))
+onUnmounted(() => {
+  chatStore.disconnectSocket()
+})
+
+const selectConversation = async (room: any) => {
+  chatStore.joinRoom(room.id)
+  await chatStore.fetchMessages(room.id)
+}
+
+const handleSendMessage = (text: string) => {
+  if (chatStore.activeRoomId) {
+    chatStore.sendMessage(chatStore.activeRoomId, text)
   }
 }
 
-// Interfaces
-interface Message {
-  id: number
-  text: string
-  time: string
-  isOutgoing: boolean
-  imageUrl?: string | null
-}
-
-interface Conversation {
-  id: number
-  name: string
-  subtitle: string
-  latestMessage: string
-  statusText: string
-  statusColor: string
-  statusBg: string
-  time: string
-  avatar: string
-  online: boolean
-  messages: Message[]
-}
-
-// Default conversation data matching mockup design
-const defaultConversations: Conversation[] = [
-  {
-    id: 1,
-    name: 'Dinda Permata',
-    subtitle: 'KaryaLoka Craft • Online',
-    latestMessage: 'Bagus, saya sudah melampirkan estimasi biaya',
-    statusText: 'Menunggu',
-    statusColor: 'text-amber-700',
-    statusBg: 'bg-amber-50 border border-amber-200/50',
-    time: '10:24 AM',
-    avatar: '/images/landing_page_images/default_pp.webp',
-    online: true,
-    messages: [
-      {
-        id: 1,
-        text: 'Halo Fikri! Saya sudah melihat foto botol kaca yang Anda kirim. Kami dapat mengolahnya menjadi lampu meja dekoratif seperti contoh yang Anda lihat pada halaman AI',
-        time: '10:15 AM',
-        isOutgoing: false
-      },
-      {
-        id: 2,
-        text: 'Bagus! Untuk membuat tiga lampu, kira-kira berapa botol yang dibutuhkan? Dan apakah komponen LED sudah disediakan?',
-        time: '10:18 AM',
-        isOutgoing: true
-      },
-      {
-        id: 3,
-        text: '“Biasanya kami membutuhkan 2 botol untuk setiap lampu agar hasilnya lebih kokoh. Ya, kami menyediakan LED putih hangat berkualitas. Berikut sketsa dasar pemasangan kabel yang saya usulka',
-        time: '10:20 AM',
-        isOutgoing: false
-      }
-    ]
-  },
-  {
-    id: 2,
-    name: 'Arif Setiawan',
-    subtitle: 'Wood Artisan • Offline',
-    latestMessage: 'Material kayu sudah siap untuk di proses',
-    statusText: 'Dikonfirmasi',
-    statusColor: 'text-green-700',
-    statusBg: 'bg-green-50 border border-green-200/50',
-    time: 'Yesterday',
-    avatar: '/images/landing_page_images/default_pp.webp',
-    online: false,
-    messages: [
-      {
-        id: 1,
-        text: 'Halo, untuk pengerjaan rak dinding kayunya bagaimana ya?',
-        time: 'Wed, 2:00 PM',
-        isOutgoing: true
-      },
-      {
-        id: 2,
-        text: 'Material kayu sudah siap untuk di proses. Saya akan mulai pemotongan besok pagi.',
-        time: 'Wed, 3:30 PM',
-        isOutgoing: false
-      }
-    ]
-  },
-  {
-    id: 3,
-    name: 'Siti Nurhaliza',
-    subtitle: 'Clay Craft • Offline',
-    latestMessage: 'Bisakah anda mengirim foto botol tambahan',
-    statusText: 'Dalam diskusi',
-    statusColor: 'text-[#7A4D30]',
-    statusBg: 'bg-[#7A4D30]/5 border border-[#7A4D30]/20',
-    time: 'Wed',
-    avatar: '/images/landing_page_images/default_pp.webp',
-    online: false,
-    messages: [
-      {
-        id: 1,
-        text: 'Bisakah anda mengirim foto botol tambahan untuk referensi saya?',
-        time: 'Wed, 9:15 AM',
-        isOutgoing: false
-      }
-    ]
-  }
-]
-
-const conversations = ref<Conversation[]>(defaultConversations)
-const activeConversationId = ref<number>(1)
-const activeConversation = ref<Conversation | null>(null)
-const showProposalModal = ref(false)
-
-const syncActiveConversation = () => {
-  const current = conversations.value.find(c => c.id === activeConversationId.value)
-  activeConversation.value = current || null
-}
-
-const selectConversation = (convo: Conversation) => {
-  activeConversationId.value = convo.id
-  syncActiveConversation()
-}
-
-const handleSendMessage = (text: string, imageUrl?: string) => {
-  const convo = conversations.value.find(c => c.id === activeConversationId.value)
-  if (!convo) return
-
-  const newMsg: Message = {
-    id: Date.now(),
-    text,
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    isOutgoing: true,
-    imageUrl: imageUrl || null
-  }
-
-  // Push message
-  convo.messages.push(newMsg)
-  convo.latestMessage = imageUrl ? '[Gambar]' : text
-  convo.time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-
-  syncActiveConversation()
-  saveConversations()
-}
-
-const handleProposalSubmit = (proposalData: any) => {
+const handleProposalSubmit = async (proposalData: any) => {
   showProposalModal.value = false
+  if (chatStore.activeRoomId) {
+    try {
+      // Safe Date parsing
+      let completionDate = new Date(proposalData.estimate)
+      if (isNaN(completionDate.getTime())) {
+        completionDate = new Date()
+        completionDate.setDate(completionDate.getDate() + 7)
+      }
+      const estimatedCompletionDate = completionDate.toISOString().split('T')[0]
 
-  const convo = conversations.value.find(c => c.id === activeConversationId.value)
-  if (!convo) return
+      // Map shipping options: "Ambil Sendiri" -> "DROP_OFF", others -> "GOSEND"
+      const deliveryMethod = proposalData.shippingMethod === 'Ambil Sendiri' ? 'DROP_OFF' : 'GOSEND'
 
-  const systemMsg: Message = {
-    id: Date.now(),
-    text: `Proposal Baru Dibuat! Produk: "${proposalData.productName}" | Estimasi: ${proposalData.estimate} | Harga: ${proposalData.price} | Pengiriman: ${proposalData.shippingMethod}`,
-    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    isOutgoing: true
+      await chatStore.createProposal(chatStore.activeRoomId, {
+        productName: proposalData.productName,
+        price: Number(proposalData.price) || 0,
+        materialsNeeded: proposalData.materialName.split(',').map((s: string) => s.trim()).filter(Boolean),
+        deliveryMethod,
+        estimatedCompletionDate,
+        paymentMethod: proposalData.paymentMethod || 'Transfer Bank'
+      })
+    } catch (err: any) {
+      alert('Gagal membuat proposal: ' + (err.message || err))
+    }
   }
-
-  convo.messages.push(systemMsg)
-  convo.latestMessage = `Proposal dibuat: ${proposalData.productName}`
-  convo.time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-
-  syncActiveConversation()
-  saveConversations()
 }
 </script>
 
@@ -249,16 +135,17 @@ const handleProposalSubmit = (proposalData: any) => {
         <!-- Left Column: Messages conversations threads list (lg:col-span-4) -->
         <div class="lg:col-span-4 h-full min-h-0">
           <FeaturesChatConversationList
-            :conversations="conversations"
-            :activeConversationId="activeConversationId"
-            @select-conversation="selectConversation"
+            :rooms="chatStore.rooms"
+            :activeRoomId="chatStore.activeRoomId"
+            @select-room="selectConversation"
           />
         </div>
 
         <!-- Right Column: Conversational interface window (lg:col-span-8) -->
         <div class="lg:col-span-8 h-full min-h-0">
           <FeaturesChatWindow
-            :conversation="activeConversation"
+            :room="chatStore.activeRoom"
+            :timeline="chatStore.chatTimeline"
             @send-message="handleSendMessage"
             @open-proposal="showProposalModal = true"
           />

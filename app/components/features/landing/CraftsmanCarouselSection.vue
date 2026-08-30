@@ -82,11 +82,16 @@ const setIndex = (index: number) => {
 
 // Navigation helpers
 const goToProfile = (craftsmanId: string | number) => {
-  navigateTo(`/profile-pengrajin?id=${craftsmanId}`)
+  navigateTo(`/profile-pengrajin?id=${craftsmanId}&ideaId=${ideaId.value || ''}`)
 }
 
 const goToChat = (craftsmanName: string) => {
-  navigateTo(`/chat?craftsman=${encodeURIComponent(craftsmanName)}`)
+  const c = craftsmanStore.matchedCraftsmen.find(item => item.user?.fullName === craftsmanName)
+  if (c) {
+    navigateTo(`/chat?craftsmanId=${c.id}&ideaId=${ideaId.value || ''}&craftsmanName=${encodeURIComponent(craftsmanName)}`)
+  } else {
+    navigateTo(`/chat?craftsman=${encodeURIComponent(craftsmanName)}`)
+  }
 }
 
 // Helper to determine order of cards to display them side-by-side cleanly

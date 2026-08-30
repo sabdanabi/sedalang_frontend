@@ -1,29 +1,54 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-
-interface Conversation {
-  id: number
-  name: string
-  subtitle: string
-  latestMessage: string
-  statusText: string
-  statusColor: string
-  statusBg: string
-  time: string
-  avatar: string
-  online: boolean
-}
+import { useAuthStore } from '~/stores/auth'
+import type { ChatRoom } from '~/stores/chat'
+import { getAvatarUrl } from '~/composables/useAvatar'
 
 const props = defineProps<{
-  conversations: Conversation[]
-  activeConversationId: number
+  rooms: ChatRoom[]
+  activeRoomId: string | null
 }>()
 
-defineEmits<{
-  (e: 'select-conversation', conversation: Conversation): void
+const emit = defineEmits<{
+  (e: 'select-room', room: ChatRoom): void
 }>()
 
 const searchQuery = ref('')
+const authStore = useAuthStore()
+
+// Helper functions for dynamic room details
+const getPartnerName = (room: ChatRoom) => {
+  const isUser = authStore.user?.role === 'USER'
+  if (isUser) {
+    return room.craftsman?.user?.fullName || 'Pengrajin'
+  } else {
+    return room.user?.fullName || 'Pengguna'
+  }
+}
+
+const getPartnerAvatar = (room: ChatRoom) => {
+  const isUser = authStore.user?.role === 'USER'
+  const rawUrl = isUser ? room.craftsman?.user?.avatarUrl : room.user?.avatarUrl
+  const rawName = isUser 
+    ? (room.craftsman?.user?.fullName || 'Pengrajin') 
+    : (room.user?.fullName || 'Pengguna')
+  return getAvatarUrl(rawUrl, rawName)
+}
+
+const getPartnerSubtitle = (room: ChatRoom) => {
+  const isUser = authStore.user?.role === 'USER'
+  if (isUser) {
+    return `${room.craftsman?.craftType || 'Kerajinan'} • Online`
+  } else {
+    return 'Pemilik Limbah • Online'
+  }
+}
+
+const formatRoomTime = (dateStr?: string) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
 </script>
 
 <template>
@@ -45,20 +70,20 @@ const searchQuery = ref('')
       <input
         type="text"
         v-model="searchQuery"
-        placeholder="Search conversations..."
+        placeholder="Cari obrolan..."
         class="w-full bg-[#FAF8F5]/80 border border-gray-100 hover:border-gray-250 focus:border-[#7A4D30]/40 focus:bg-white rounded-2xl py-3 pl-11 pr-4 text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-inter"
       />
     </div>
 
-    <!-- Conversations List -->
+    <!-- Rooms List -->
     <div class="flex-grow overflow-y-auto space-y-3 pr-1">
       <div
-        v-for="convo in conversations"
-        :key="convo.id"
-        @click="$emit('select-conversation', convo)"
-        class="flex gap-4 p-4 rounded-2xl border transition-all duration-200 cursor-pointer text-left select-none"
+        v-for="room in rooms"
+        :key="room.id"
+        @click="$emit('select-room', room)"
+        class="flex gap-4 p-4 rounded-2xl border transition-all duration-200 cursor-pointer text-left select-none relative"
         :class="[
-          activeConversationId === convo.id
+          activeRoomId === room.id
             ? 'border-[#7A4D30]/20 bg-[#7A4D30]/5'
             : 'border-transparent hover:bg-gray-50'
         ]"
@@ -66,41 +91,52 @@ const searchQuery = ref('')
         <!-- Profile Pic with Online Dot Indicator -->
         <div class="relative flex-shrink-0">
           <img
-            :src="convo.avatar || '/images/landing_page_images/default_pp.webp'"
-            :alt="convo.name"
+            :src="getPartnerAvatar(room)"
+            :alt="getPartnerName(room)"
             class="w-12 h-12 rounded-full object-cover border border-gray-100"
           />
           <span
-            v-if="convo.online"
             class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"
           ></span>
         </div>
 
-        <!-- Convo Text Details -->
+        <!-- Room Text Details -->
         <div class="flex-grow flex flex-col justify-between overflow-hidden">
           <div class="flex justify-between items-baseline gap-2">
             <span class="font-poppins text-sm font-bold text-gray-900 truncate">
-              {{ convo.name }}
+              {{ getPartnerName(room) }}
             </span>
             <span class="text-[10px] text-gray-400 font-medium font-inter flex-shrink-0">
-              {{ convo.time }}
+              {{ formatRoomTime(room.lastMessage?.createdAt || room.createdAt) }}
             </span>
           </div>
 
           <p class="font-inter text-xs text-gray-500 truncate mt-1 leading-relaxed">
-            {{ convo.latestMessage }}
+            {{ room.lastMessage?.content || 'Belum ada pesan' }}
           </p>
 
-          <!-- Status badge row -->
+          <!-- Idea Title Badge -->
           <div class="mt-2.5">
             <span
-              class="inline-block text-[10px] font-bold font-inter tracking-wide px-2.5 py-0.5 rounded-md"
-              :class="[convo.statusBg, convo.statusColor]"
+              class="inline-block text-[10px] font-bold font-inter tracking-wide px-2.5 py-0.5 rounded-md bg-[#7A4D30]/5 text-[#7A4D30] border border-[#7A4D30]/10 max-w-full truncate"
             >
-              {{ convo.statusText }}
+              {{ room.idea?.ideaTitle || 'Diskusi Daur Ulang' }}
             </span>
           </div>
         </div>
+
+        <!-- Unread Badge Indicator -->
+        <div 
+          v-if="room.unreadCount > 0" 
+          class="absolute right-4 bottom-4 w-5 h-5 bg-[#7A4D30] text-white text-[10px] font-bold font-inter rounded-full flex items-center justify-center shadow-md animate-bounce"
+        >
+          {{ room.unreadCount }}
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div v-if="rooms.length === 0" class="py-12 text-center">
+        <p class="text-xs text-gray-400 font-inter">Belum ada obrolan aktif</p>
       </div>
     </div>
   </div>

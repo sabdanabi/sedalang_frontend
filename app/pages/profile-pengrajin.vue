@@ -198,8 +198,32 @@ onMounted(() => {
   }
 })
 
-const handleContactCraftsman = () => {
-  navigateTo(`/chat?craftsman=${encodeURIComponent(profile.value.name)}`)
+const handleContactCraftsman = async () => {
+  let finalIdeaId = route.query.ideaId as string
+  if (!finalIdeaId) {
+    if (import.meta.client) {
+      finalIdeaId = localStorage.getItem('sedalang_active_idea_id') || ''
+    }
+  }
+
+  // Fallback to latest idea from history
+  if (!finalIdeaId) {
+    try {
+      const api = useApi()
+      const res = await api('/api/v1/ai/history') as any
+      if (res.data && res.data.length > 0) {
+        const latestHistory = res.data[0]
+        if (latestHistory.ideas && latestHistory.ideas.length > 0) {
+          finalIdeaId = latestHistory.ideas[0].id
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load fallback idea history:', err)
+    }
+  }
+
+  const craftsmanId = route.query.id as string
+  navigateTo(`/chat?craftsmanId=${craftsmanId}&ideaId=${finalIdeaId}&craftsmanName=${encodeURIComponent(profile.value.name)}`)
 }
 
 // Save profile state
