@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '~/stores/auth'
 import { navigateTo } from '#app'
 
@@ -32,9 +33,41 @@ const profile = ref<UserProfile>({
 
 const showEditModal = ref(false)
 const authStore = useAuthStore()
+const route = useRoute()
+
+const isOwnProfile = computed(() => {
+  if (!route.query.id) return true
+  return route.query.id === authStore.user?.id
+})
 
 const loadProfile = async () => {
   try {
+    // If viewing another user's profile
+    if (!isOwnProfile.value) {
+      const savedViewProfile = localStorage.getItem('sedalang_view_user_profile')
+      if (savedViewProfile) {
+        try {
+          const u = JSON.parse(savedViewProfile)
+          if (u.id === route.query.id) {
+            profile.value = {
+              name: u.fullName || 'Pengguna',
+              location: u.address || 'Semarang Tengah, Jawa Tengah',
+              email: u.email || '',
+              phone: u.phoneNumber || '',
+              avatar: getAvatarUrl(u.avatarUrl, u.fullName || 'User'),
+              role: 'Pengguna',
+              latitude: u.latitude,
+              longitude: u.longitude
+            }
+            return
+          }
+        } catch (e) {
+          console.error('Error parsing view profile local data:', e)
+        }
+      }
+    }
+
+    // Otherwise load logged-in user profile
     const userData = await authStore.getMe()
     if (userData) {
       if (userData.role === 'CRAFTSMAN') {
@@ -129,6 +162,7 @@ const handleEditSubmit = async (updatedData: UserProfile) => {
       <!-- Profile Header Summary Card -->
       <FeaturesProfileUserProfileCard
         :profile="profile"
+        :isOwnProfile="isOwnProfile"
         @edit="showEditModal = true"
       />
 
@@ -148,6 +182,7 @@ const handleEditSubmit = async (updatedData: UserProfile) => {
             :location="profile.location" 
             :latitude="profile.latitude"
             :longitude="profile.longitude"
+            :isOwnProfile="isOwnProfile"
             @refresh-profile="loadProfile"
           />
         </div>

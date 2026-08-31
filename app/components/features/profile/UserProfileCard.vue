@@ -8,9 +8,15 @@ interface UserProfile {
   avatar: string
 }
 
-defineProps<{
-  profile: UserProfile
-}>()
+const props = withDefaults(
+  defineProps<{
+    profile: UserProfile
+    isOwnProfile?: boolean
+  }>(),
+  {
+    isOwnProfile: true
+  }
+)
 
 defineEmits<{
   (e: 'edit'): void
@@ -41,6 +47,7 @@ const handleLogout = () => {
         </div>
         <!-- Camera Edit Overlay Button.svg -->
         <button
+          v-if="isOwnProfile"
           type="button"
           @click="$emit('edit')"
           class="absolute -bottom-2 -right-2 w-11 h-11 cursor-pointer focus:outline-none transition-transform hover:scale-105"
@@ -73,7 +80,7 @@ const handleLogout = () => {
     </div>
 
     <!-- Actions Buttons -->
-    <div class="flex flex-row gap-3.5 w-full md:w-auto justify-end items-center md:ml-auto">
+    <div v-if="isOwnProfile" class="flex flex-row gap-3.5 w-full md:w-auto justify-end items-center md:ml-auto">
       <!-- Edit Profil Button -->
       <button
         type="button"

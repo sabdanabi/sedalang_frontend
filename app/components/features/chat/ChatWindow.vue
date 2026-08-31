@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
+import { navigateTo } from '#app'
 import { useAuthStore } from '~/stores/auth'
 import { useChatStore, type ChatRoom, type Proposal } from '~/stores/chat'
 import { getAvatarUrl } from '~/composables/useAvatar'
@@ -146,6 +147,34 @@ const handleProposalActioned = async () => {
   // acceptProposal / rejectProposal already update local proposal status
   // fetchProposals is skipped since the endpoint returns 404
 }
+
+const handlePartnerProfileClick = () => {
+  if (!props.room) return
+
+  const loggedInUserId = authStore.user?.id
+  const isCustomer = props.room.userId === loggedInUserId
+
+  if (isCustomer) {
+    if (props.room.craftsman?.id) {
+      navigateTo(`/profile-pengrajin?id=${props.room.craftsman.id}`)
+    }
+  } else {
+    if (props.room.userId && props.room.user) {
+      // Save user details to localStorage to allow viewing another user's profile offline/API-less
+      localStorage.setItem('sedalang_view_user_profile', JSON.stringify({
+        id: props.room.userId,
+        fullName: props.room.user.fullName,
+        email: props.room.user.email,
+        phoneNumber: props.room.user.phoneNumber,
+        avatarUrl: props.room.user.avatarUrl,
+        address: props.room.user.address,
+        latitude: props.room.user.latitude,
+        longitude: props.room.user.longitude
+      }))
+      navigateTo(`/profile?id=${props.room.userId}`)
+    }
+  }
+}
 </script>
 
 <template>
@@ -155,7 +184,10 @@ const handleProposalActioned = async () => {
     <div v-if="room" class="flex items-center justify-between p-6 border-b border-gray-100 flex-shrink-0">
       
       <!-- Partner Info -->
-      <div class="flex items-center gap-3 text-left">
+      <div 
+        class="flex items-center gap-3 text-left cursor-pointer hover:opacity-85 transition-opacity"
+        @click="handlePartnerProfileClick"
+      >
         <div class="relative">
           <img
             :src="getPartnerAvatar()"
@@ -247,7 +279,11 @@ const handleProposalActioned = async () => {
           :class="[isOutgoing(item) ? 'justify-end' : 'justify-start']"
         >
           <!-- Incoming message partner avatar -->
-          <div v-if="!isOutgoing(item)" class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mr-3 mt-1">
+          <div 
+            v-if="!isOutgoing(item)" 
+            class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mr-3 mt-1 cursor-pointer hover:opacity-80 transition-opacity"
+            @click="handlePartnerProfileClick"
+          >
             <img 
               :src="getPartnerAvatar()" 
               alt="Partner avatar"
