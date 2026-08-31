@@ -11,7 +11,7 @@ definePageMeta({
 const route = useRoute()
 const ordersStore = useOrdersStore()
 const authStore = useAuthStore()
-const orderId = (route.query.id as string) || 'LMD95628654'
+const orderId = route.query.id as string
 
 // Check if current user is craftsman
 const isCraftsman = computed(() => authStore.user?.role === 'CRAFTSMAN')
@@ -26,12 +26,14 @@ onMounted(async () => {
     }
 
     // Fetch order detail from backend
-    if (orderId && orderId !== 'LMD95628654') {
+    if (orderId) {
       try {
         await ordersStore.fetchOrderById(orderId)
       } catch (err) {
         console.error('Failed to load order detail from backend:', err)
       }
+    } else {
+      console.warn('No order ID provided in URL')
     }
   }
 })
@@ -74,7 +76,7 @@ const steps = computed<TimelineStep[]>({
 
     const activeOrder = ordersStore.activeOrder
     
-    // If there are no progressSteps from the server, we fallback to standard/localStorage steps
+    // Fallback to local storage if API is missing steps
     if (!activeOrder || !activeOrder.progressSteps || activeOrder.progressSteps.length === 0) {
       if (import.meta.client) {
         const savedSteps = localStorage.getItem(`sedalang_timeline_steps_${orderId}`)
@@ -87,42 +89,14 @@ const steps = computed<TimelineStep[]>({
         }
       }
 
-      // Default mock timeline steps
+      // Default basic initial step if nothing exists
       return [
         {
           id: 1,
-          title: 'Material Diterima',
-          description: 'Bahan sudah kami terima dan sudah kami verifikasi kondisinya.',
-          date: activeOrder ? new Date(activeOrder.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '12 Okt',
+          title: 'Pesanan Dibuat',
+          description: 'Pesanan telah berhasil dibuat dan sedang menunggu konfirmasi/proses.',
+          date: activeOrder ? new Date(activeOrder.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '-',
           status: 'completed'
-        },
-        {
-          id: 2,
-          title: 'Proses Awal',
-          description: 'Bahan sedang dibersihkan dan label botol sudah dilepas seluruhnya.',
-          date: activeOrder ? new Date(activeOrder.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '13 Okt',
-          status: 'completed'
-        },
-        {
-          id: 3,
-          title: 'Produksi',
-          description: 'Proses pemotongan kaca sesuai desain vas. Sedang masuk tahap pembentukan tekstur.',
-          date: 'Dalam proses',
-          status: 'in_progress'
-        },
-        {
-          id: 4,
-          title: 'Penyelesaian',
-          description: 'Pengecatan, perakitan kabel kelistrikan, dan pemasangan kap lampu.',
-          date: 'Expected Oct 18',
-          status: 'pending'
-        },
-        {
-          id: 5,
-          title: 'Siap untuk Dikirim',
-          description: 'Produk dibungkus gelembung (bubble wrap) tebal dan diserahkan ke kurir.',
-          date: 'Expected Oct 20',
-          status: 'pending'
         }
       ]
     }
@@ -191,7 +165,7 @@ const handleAddProgress = async (formData: { title: string; description: string;
   showAddModal.value = false
 
   // Upload progress image to backend if provided
-  if (formData.imageFile && orderId && orderId !== 'LMD95628654') {
+  if (formData.imageFile && orderId) {
     try {
       await ordersStore.uploadOrderMedia(orderId, formData.imageFile)
     } catch (err: any) {

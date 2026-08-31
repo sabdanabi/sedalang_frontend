@@ -44,8 +44,8 @@ const shipping = computed(() => {
   if (method === 'DROP_OFF') return 'Pengiriman: Ambil Sendiri'
   return `Pengiriman: ${method || '-'}`
 })
-const price = computed(() => formatPrice(props.order.price || props.order.proposal?.price || 0))
-const totalPrice = computed(() => formatPrice(props.order.price || props.order.proposal?.price || 0))
+const price = computed(() => formatPrice(props.order.proposal?.price || props.order.totalAmount || 0))
+const totalPrice = computed(() => formatPrice(props.order.totalAmount || props.order.proposal?.price || 0))
 const paymentMethod = computed(() => props.order.paymentMethod || props.order.proposal?.paymentMethod || '-')
 
 // Status badge config
