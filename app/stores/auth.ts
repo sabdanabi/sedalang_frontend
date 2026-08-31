@@ -187,11 +187,14 @@ export const useAuthStore = defineStore('auth', () => {
     return response.data
   }
 
-  // Update general user profile details (name, phone, and avatar file)
+  // Update general user profile details (name, phone, avatar file, and location coordinates)
   const updateUserProfile = async (data: { 
     fullName: string; 
     phoneNumber?: string; 
     avatarFile?: File | null;
+    location?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
   }) => {
     const config = useRuntimeConfig()
     const baseURL = config.public.apiBase as string
@@ -205,13 +208,29 @@ export const useAuthStore = defineStore('auth', () => {
       if (data.phoneNumber) {
         formData.append('phoneNumber', data.phoneNumber)
       }
+      if (data.location !== undefined) {
+        formData.append('location', data.location || '')
+      }
+      if (data.latitude !== undefined && data.latitude !== null) {
+        formData.append('latitude', String(data.latitude))
+      }
+      if (data.longitude !== undefined && data.longitude !== null) {
+        formData.append('longitude', String(data.longitude))
+      }
       formData.append('avatar', data.avatarFile)
       body = formData
     } else {
       body = {
         fullName: data.fullName,
-        phoneNumber: data.phoneNumber || null
+        phoneNumber: data.phoneNumber || null,
+        location: data.location !== undefined ? data.location : undefined,
+        latitude: data.latitude !== undefined ? data.latitude : undefined,
+        longitude: data.longitude !== undefined ? data.longitude : undefined
       }
+      // Remove undefined keys
+      Object.keys(body).forEach(key => {
+        if (body[key] === undefined) delete body[key]
+      })
       headers['Content-Type'] = 'application/json'
     }
 

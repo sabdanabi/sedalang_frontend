@@ -96,7 +96,10 @@ const handleEditSubmit = async (updatedData: UserProfile) => {
     await authStore.updateUserProfile({
       fullName: updatedData.name,
       phoneNumber: updatedData.phone,
-      avatarFile: updatedData.avatarFile
+      avatarFile: updatedData.avatarFile,
+      location: updatedData.location,
+      latitude: updatedData.latitude,
+      longitude: updatedData.longitude
     })
 
     showEditModal.value = false
@@ -145,6 +148,7 @@ const handleEditSubmit = async (updatedData: UserProfile) => {
             :location="profile.location" 
             :latitude="profile.latitude"
             :longitude="profile.longitude"
+            @refresh-profile="loadProfile"
           />
         </div>
 

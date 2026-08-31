@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import * as maplibregl from 'maplibre-gl'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import { useAuthStore } from '~/stores/auth'
 
 // Set the Maplibre worker URL
 maplibregl.setWorkerUrl(workerUrl)
@@ -18,6 +19,12 @@ const props = withDefaults(
     isOwnProfile: true
   }
 )
+
+const emit = defineEmits<{
+  (e: 'refresh-profile'): void
+}>()
+
+const authStore = useAuthStore()
 
 const mapContainer = ref<HTMLElement | null>(null)
 let mapInstance: maplibregl.Map | null = null
@@ -113,7 +120,7 @@ onBeforeUnmount(() => {
   }
 })
 
-// Geolocation fetch coordinates and draw routing
+// Geolocation fetch coordinates and save location to API
 const handleCompareLocation = () => {
   if (!navigator.geolocation) {
     alert('Geolocation tidak didukung oleh browser Anda.')
@@ -126,71 +133,51 @@ const handleCompareLocation = () => {
     async (position) => {
       try {
         const { longitude: userLng, latitude: userLat } = position.coords
-        const [destLng, destLat] = profileCoords.value
 
-        if (!mapInstance) return
-
-        // Clean up previous user marker and route layers
-        cleanupRouteAndUser()
-
-        // Add a blue marker representing the user's current location
-        currentLocationMarker = new maplibregl.Marker({ color: '#3b82f6' })
-          .setLngLat([userLng, userLat])
-          .addTo(mapInstance)
-
-        // Fit map bounds to show both markers
-        const bounds = new maplibregl.LngLatBounds()
-        bounds.extend([userLng, userLat])
-        bounds.extend([destLng, destLat])
-        mapInstance.fitBounds(bounds, { padding: 60 })
-
-        // Fetch actual road routing geometry from OSRM
-        let routeGeometry: any = {
-          type: 'LineString',
-          coordinates: [
-            [userLng, userLat],
-            [destLng, destLat]
-          ]
-        }
-
+        // Fetch location address text via reverse geocoding API
+        let detectedAddress = 'Semarang Tengah, Jawa Tengah'
         try {
-          const response = await fetch(
-            `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${destLng},${destLat}?overview=full&geometries=geojson`
-          )
-          const data = await response.json()
-          if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
-            routeGeometry = data.routes[0].geometry
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${userLat}&lon=${userLng}&format=json`)
+          const data = await res.json()
+          if (data && data.display_name) {
+            const address = data.address
+            const city = address.city || address.town || address.municipality || address.county || ''
+            const state = address.state || ''
+            if (city) {
+              detectedAddress = `${city}, ${state}`
+            } else {
+              detectedAddress = data.display_name.split(',').slice(0, 3).join(',').trim()
+            }
           }
         } catch (err) {
-          console.warn('Failed to fetch OSRM routing, falling back to direct line:', err)
+          console.warn('Failed to reverse geocode coordinate:', err)
         }
 
-        // Add routing GeoJSON source and line layer
-        mapInstance.addSource('route', {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: routeGeometry
+        // Send to backend via authStore
+        if (authStore.user) {
+          await authStore.updateUserProfile({
+            fullName: authStore.user.fullName || '',
+            phoneNumber: authStore.user.phoneNumber || undefined,
+            location: detectedAddress,
+            latitude: userLat,
+            longitude: userLng
+          })
+          
+          alert('Lokasi Anda berhasil diperbarui di sistem!')
+          
+          // Emit to parent to reload profile details
+          emit('refresh-profile')
+        } else {
+          // Fallback if not logged in
+          profileCoords.value = [userLng, userLat]
+          if (mapInstance && profileMarker) {
+            profileMarker.setLngLat([userLng, userLat])
+            mapInstance.flyTo({ center: [userLng, userLat], zoom: 15 })
           }
-        })
-
-        mapInstance.addLayer({
-          id: 'route',
-          type: 'line',
-          source: 'route',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round'
-          },
-          paint: {
-            'line-color': '#ef4444',
-            'line-width': 5,
-            'line-opacity': 0.8
-          }
-        })
-      } catch (err) {
-        console.error(err)
+        }
+      } catch (err: any) {
+        console.error('Failed to update user location:', err)
+        alert('Gagal memperbarui lokasi Anda: ' + (err.message || err))
       } finally {
         isComparing.value = false
       }
