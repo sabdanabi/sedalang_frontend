@@ -16,7 +16,7 @@ const selectTag = (tagName: string) => {
 <template>
   <div>
     <!-- Hero Section -->
-    <div class="relative w-full bg-white select-none">
+    <div id="hero" class="relative w-full bg-white select-none">
       <!-- Decorative background elements for premium feel -->
       <div class="absolute inset-0 overflow-hidden pointer-events-none">
         <div class="absolute -top-[40%] -left-[10%] w-[80vw] h-[80vw] rounded-full bg-[#7A4D30]/3 blur-[120px]"></div>
@@ -28,19 +28,19 @@ const selectTag = (tagName: string) => {
         
         <!-- Subheading / Tagline -->
         <span class="text-sm md:text-base font-semibold text-gray-500 tracking-wide uppercase mb-5 animate-fade-in font-inter">
-          Green Supply Chain & Sustainable Consumption Platforms
+          Rantai Pasok Hijau & Platform Konsumsi Berkelanjutan
         </span>
 
         <!-- Main Heading -->
         <h1 class="font-poppins text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-[#1A1A1A] max-w-5xl leading-[1.40] mb-6">
-          Recycling Becomes Valuable <br class="hidden sm:inline" />
-          Together Local Artisans
+          Daur Ulang Menjadi Berharga <br class="hidden sm:inline" />
+          Bersama Pengrajin Lokal
         </h1>
 
         <!-- Description Paragraph -->
         <p class="font-inter text-base sm:text-lg md:text-xl text-gray-500 max-w-2xl leading-relaxed mb-10">
-          Transform used household items into valuable products <br class="hidden md:inline" />
-          with the help of AI and local MSME artisans in Semarang.
+          Ubah barang bekas rumah tangga Anda menjadi produk bernilai tinggi <br class="hidden md:inline" />
+          dengan bantuan AI dan UMKM pengrajin lokal di Kota Semarang.
         </p>
 
         <!-- Mulai Button -->
@@ -57,30 +57,30 @@ const selectTag = (tagName: string) => {
         <!-- Bottom Highlights List -->
         <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-3 text-sm md:text-base font-medium text-gray-800 font-inter">
           <button 
-            @click="selectTag('AI Page')"
+            @click="selectTag('Halaman AI')"
             class="hover:text-[#7A4D30] transition-colors duration-150 cursor-pointer focus:outline-none"
           >
-            AI Page
+            Halaman AI
           </button>
           <span class="text-gray-300 select-none">•</span>
           <button 
-            @click="selectTag('Discussion Room')"
+            @click="selectTag('Ruang Diskusi')"
             class="hover:text-[#7A4D30] transition-colors duration-150 cursor-pointer focus:outline-none"
           >
-            Discussion Room
+            Ruang Diskusi
           </button>
           <span class="text-gray-300 select-none">•</span>
           <button 
-            @click="selectTag('Tracking Progres')"
+            @click="selectTag('Lacak Progres')"
             class="hover:text-[#7A4D30] transition-colors duration-150 cursor-pointer focus:outline-none"
           >
-            Tracking Progres
+            Lacak Progres
           </button>
           <span class="text-gray-300 select-none">•</span>
           <button 
-            @click="selectTag('Looking for a Craftsman')"
+            @click="selectTag('Cari Pengrajin')"
             class="hover:text-[#7A4D30] transition-colors duration-150 cursor-pointer focus:outline-none">
-            Looking for a Craftsman
+            Cari Pengrajin
           </button>
         </div>
       </div>
@@ -98,10 +98,14 @@ const selectTag = (tagName: string) => {
     <FeaturesLandingMapsSection />
 
     <!-- QnA Section -->
-    <FeaturesLandingQnaSection />
+    <div id="qna">
+      <FeaturesLandingQnaSection />
+    </div>
 
     <!-- Testimonials Section -->
-    <FeaturesLandingTestimonialsSection />
+    <div id="testimoni">
+      <FeaturesLandingTestimonialsSection />
+    </div>
     
   </div>
 </template>

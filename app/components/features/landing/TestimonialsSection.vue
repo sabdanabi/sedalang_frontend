@@ -1,40 +1,38 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { getAvatarUrl } from '~/composables/useAvatar'
 
-const currentPage = ref(1) // Start at page 2 like the mockup design
-const totalPages = 19
+const currentPage = ref(1)
+const totalPages = 3
 
-// Standard local avatar path from public folder
-const defaultAvatar = '/images/landing_page_images/default_pp.webp'
-
-// Dummy testimonials data variations for the pages (cycling using modulo)
+// Dummy testimonials data variations for the 3 pages (cycling using modulo)
 const testimonialsData = [
-  // Variant A (Matches mockup layout closely)
+  // Page 1
   [
-    { type: 'date', header: '12 - 02 - 2026', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.', name: 'Bruno James', role: 'Creative design' },
-    { type: 'title', header: 'PT. Joystick', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.', name: 'Bruno James', role: 'Creative design' },
-    { type: 'date', header: '12 - 02 - 2026', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.', name: 'Bruno James', role: 'Creative design' },
-    { type: 'title', header: 'PT. Joystick', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.', name: 'Bruno James', role: 'Creative design' },
-    { type: 'date', header: '12 - 02 - 2026', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.', name: 'Bruno James', role: 'Creative design' },
-    { type: 'title', header: 'PT. Joystick', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.', name: 'Bruno James', role: 'Creative design' }
+    { type: 'date', header: '20 - 02 - 2026', text: 'Sangat membantu mengelola limbah kayu dari gudang kami. Sekarang semua sisa palet kayu sudah berubah menjadi produk bernilai jual tinggi bersama pengrajin SeDaLang.', name: 'Budi Santoso', role: 'Pemilik Toko Mebel' },
+    { type: 'title', header: 'Karya Mandiri', text: 'Sistem pencocokan AI di SeDaLang sangat akurat. Kami berhasil menemukan pengrajin logam yang terampil mendaur ulang sisa besi potongan kami menjadi stan pajangan toko.', name: 'Fajar Pratama', role: 'Manajer Operasional' },
+    { type: 'date', header: '15 - 02 - 2026', text: 'Website ini sangat inovatif! Kami bisa berkonsultasi langsung dengan pengrajin di Ruang Diskusi untuk merancang kerajinan kulit dari sisa bahan produksi kami.', name: 'Larasati Putri', role: 'Perancang Busana' },
+    { type: 'title', header: 'CV. Indo Cipta', text: 'Escrow dan pelacakan progres di SeDaLang memberikan rasa aman yang luar biasa. Sangat transparan mulai dari pengiriman material hingga produk jadi tiba.', name: 'Dian Wijaya', role: 'Direktur Keuangan' },
+    { type: 'title', header: 'Sinar Terang', text: 'Program CSR perusahaan kami menjadi jauh lebih bermakna. Kami berhasil menyalurkan sisa kertas kantor untuk didaur ulang menjadi kotak kemasan premium.', name: 'Agung Nugroho', role: 'Koordinator CSR' },
+    { type: 'date', header: '12 - 02 - 2026', text: 'Sangat puas dengan vas bunga dari botol kaca bekas yang dikerjakan oleh mitra pengrajin SeDaLang. Kualitas kap lampu rapi dan pengemasan GoSend sangat aman.', name: 'Citra Lestari', role: 'Ibu Rumah Tangga' }
   ],
-  // Variant B (Real-world descriptions)
+  // Page 2
   [
-    { type: 'title', header: 'PT. Sirkula Wood', text: 'Working with SeDaLang and local Semarang artisans allowed us to repurpose all our scrap timber into beautiful lounge furniture. The process was transparent and simple.', name: 'Sarah Connor', role: 'Operations Manager' },
-    { type: 'date', header: '15 - 03 - 2026', text: 'Absolutely love the customized bamboo desk organizers. The AI suggestions were highly creative, and tracking shipping milestones gave us peace of mind.', name: 'Alex Mercer', role: 'Product Lead' },
-    { type: 'date', header: '18 - 03 - 2026', text: 'A fantastic initiative matching local MSMEs with businesses. We successfully turned 500kg of metal offcuts into premium showroom stands.', name: 'Diana Prince', role: 'Sustainability Specialist' },
-    { type: 'title', header: 'PT. Digital Creative', text: 'Great communication. The discussion room let us refine the designs directly with the craftsman. Safe shipping, excellent packaging.', name: 'Bruce Wayne', role: 'Purchasing Director' },
-    { type: 'title', header: 'Eco Packaging Corp', text: 'An absolute game-changer for corporate CSR goals. Replaced our office waste with sustainable products crafted right in Semarang.', name: 'Clark Kent', role: 'CSR Coordinator' },
-    { type: 'date', header: '22 - 03 - 2026', text: 'The craftsmen turned old cargo pallets into elegant retail stools. Very highly recommended platform for any green business.', name: 'Arthur Curry', role: 'Store Owner' }
+    { type: 'title', header: 'CV. Eco Green', text: 'SeDaLang membuka pasar baru bagi UMKM kreatif seperti kami. Melalui platform ini, pasokan limbah berkualitas dari para mitra selalu stabil dan terverifikasi.', name: 'Hendra Setiawan', role: 'Pengrajin Kayu' },
+    { type: 'date', header: '05 - 03 - 2026', text: 'Ide-ide kreasi daur ulang dari AI SeDaLang sangat kreatif dan out-of-the-box. Sangat membantu kami yang awalnya bingung ingin mengolah limbah botol plastik.', name: 'Dewi Sartika', role: 'Pegiat Lingkungan' },
+    { type: 'date', header: '08 - 03 - 2026', text: 'Menyulap limbah ban bekas menjadi kursi taman cantik kini sangat mudah. Pengrajin lokal Semarang di SeDaLang benar-benar terampil dan profesional.', name: 'Rian Hidayat', role: 'Pemilik Kafe' },
+    { type: 'title', header: 'PT. Logam Jaya', text: 'Kami mendonasikan sisa kuningan kami dan ditukar dengan produk kerajinan dekoratif estetik untuk kantor. Rekomendasi AI-nya benar-benar fungsional!', name: 'Bambang Pamungkas', role: 'General Manager' },
+    { type: 'title', header: 'Artha Nusa', text: 'Alur transaksi aman dan diskusi interaktif dengan pengrajin sangat membantu menyamakan persepsi desain. Tidak ada miskomunikasi selama produksi.', name: 'Eka Wulandari', role: 'Spesialis Pengadaan' },
+    { type: 'date', header: '10 - 03 - 2026', text: 'Kini saya tidak perlu bingung membuang sisa kain perca. Cukup cari pengrajin tekstil di dekat saya lewat peta SeDaLang dan semuanya langsung beres.', name: 'Andi Wijaya', role: 'Wiraswasta' }
   ],
-  // Variant C
+  // Page 3
   [
-    { type: 'date', header: '01 - 04 - 2026', text: 'Excellent matching accuracy. The system selected a highly skilled weaver who transformed our textile waste into beautiful corporate rugs.', name: 'Selina Kyle', role: 'Home Decor Stylist' },
-    { type: 'title', header: 'PT. Metallurgy Utama', text: 'Managed to save 300kg of brass filings from entering the waste stream by partnering with local blacksmiths. Superb workflow and design ideas.', name: 'Tony Stark', role: 'Industrial Designer' },
-    { type: 'date', header: '05 - 04 - 2026', text: 'The escrow-like secure transaction system makes buying customized recycled art safe and simple. Highly recommend this Nuxt web app.', name: 'Natasha Romanoff', role: 'Project Director' },
-    { type: 'title', header: 'Semarang Craft Hub', text: 'We received high quality custom paper boxes made entirely from recycled office papers. The communication was prompt and helpful.', name: 'Peter Parker', role: 'Creative Specialist' },
-    { type: 'date', header: '08 - 04 - 2026', text: 'The AI recommendations were spot-on! It recognized our wood scrap types and generated beautiful Scandinavian chair concepts.', name: 'Wanda Maximoff', role: 'Design Consultant' },
-    { type: 'title', header: 'PT. Joyful Living', text: 'A wonderful bridge connecting modern enterprises with local wisdom and artisanal skills. The eco impact numbers speak for themselves.', name: 'Steve Rogers', role: 'Community Partner' }
+    { type: 'date', header: '12 - 03 - 2026', text: 'SeDaLang adalah platform terbaik untuk mendukung ekonomi sirkular lokal. Penggunaannya mudah, fiturnya lengkap, dan dampaknya sangat nyata bagi lingkungan.', name: 'Siti Aminah', role: 'Dosen Teknik Lingkungan' },
+    { type: 'title', header: 'PT. Kertas Semarang', text: 'Daur ulang limbah karton tebal menjadi kotak tisu mewah berjalan dengan sangat cepat. Negosiasi proposal harga dengan pengrajin juga transparan.', name: 'Joko Widodo', role: 'Spesialis Keberlanjutan' },
+    { type: 'date', header: '18 - 03 - 2026', text: 'Fitur chat room dan proposal penawaran harga di SeDaLang sangat rapi. Tombol setuju/tolak dan integrasi pembayarannya memudahkan transaksi kami.', name: 'Gita Gutawa', role: 'Kolektor Seni' },
+    { type: 'title', header: 'Indo Kulit', text: 'Kerja sama kami dengan perajin dompet dari perca kulit sangat sukses. Pengiriman aman dengan kurir lokal dan progres terupdate setiap hari.', name: 'Rudi Hartono', role: 'Supervisor Produksi' },
+    { type: 'title', header: 'Semarang Creative', text: 'Rekomendasi model daur ulang dari fitur AI SeDaLang sangat futuristik. Kami mendapat inspirasi produk bernilai jual yang tidak terpikirkan sebelumnya.', name: 'Nadia Safitri', role: 'Desainer Produk' },
+    { type: 'date', header: '22 - 03 - 2026', text: 'Layanan dukungan pelanggan yang ramah dan sistem navigasi peta pengrajin terdekat yang sangat membantu mempercepat proses drop-off material limbah.', name: 'Rizal Syahputra', role: 'Mahasiswa' }
   ]
 ]
 
@@ -82,7 +80,7 @@ const prevPage = () => {
 
       <!-- Section Title -->
       <h2 class="font-poppins text-4xl md:text-5xl font-medium text-gray-950 mb-12 tracking-tight">
-        Feedback From Client
+        Umpan Balik Klien Kami
       </h2>
 
       <!-- Testimonials Staggered Grid with Vue Page Swap Transition -->
@@ -102,7 +100,7 @@ const prevPage = () => {
                 </p>
               </div>
               <div class="flex items-center mt-auto">
-                <img :src="defaultAvatar" alt="Avatar" class="w-10 h-10 rounded-full object-cover mr-4 border border-gray-100" />
+                <img :src="getAvatarUrl(null, currentTestimonials[0].name)" alt="Avatar" class="w-10 h-10 rounded-full object-cover mr-4 border border-gray-100" />
                 <div>
                   <h4 class="font-poppins text-sm font-bold text-gray-950">{{ currentTestimonials[0].name }}</h4>
                   <p class="font-inter text-xs text-gray-400">{{ currentTestimonials[0].role }}</p>
@@ -121,7 +119,7 @@ const prevPage = () => {
                 </p>
               </div>
               <div class="flex items-center mt-auto">
-                <img :src="defaultAvatar" alt="Avatar" class="w-10 h-10 rounded-full object-cover mr-4 border border-gray-100" />
+                <img :src="getAvatarUrl(null, currentTestimonials[3].name)" alt="Avatar" class="w-10 h-10 rounded-full object-cover mr-4 border border-gray-100" />
                 <div>
                   <h4 class="font-poppins text-sm font-bold text-gray-950">{{ currentTestimonials[3].name }}</h4>
                   <p class="font-inter text-xs text-gray-400">{{ currentTestimonials[3].role }}</p>
@@ -143,7 +141,7 @@ const prevPage = () => {
                 </p>
               </div>
               <div class="flex items-center mt-auto">
-                <img :src="defaultAvatar" alt="Avatar" class="w-10 h-10 rounded-full object-cover mr-4 border border-gray-100" />
+                <img :src="getAvatarUrl(null, currentTestimonials[1].name)" alt="Avatar" class="w-10 h-10 rounded-full object-cover mr-4 border border-gray-100" />
                 <div>
                   <h4 class="font-poppins text-sm font-bold text-gray-950">{{ currentTestimonials[1].name }}</h4>
                   <p class="font-inter text-xs text-gray-400">{{ currentTestimonials[1].role }}</p>
@@ -162,7 +160,7 @@ const prevPage = () => {
                 </p>
               </div>
               <div class="flex items-center mt-auto">
-                <img :src="defaultAvatar" alt="Avatar" class="w-10 h-10 rounded-full object-cover mr-4 border border-gray-100" />
+                <img :src="getAvatarUrl(null, currentTestimonials[4].name)" alt="Avatar" class="w-10 h-10 rounded-full object-cover mr-4 border border-gray-100" />
                 <div>
                   <h4 class="font-poppins text-sm font-bold text-gray-950">{{ currentTestimonials[4].name }}</h4>
                   <p class="font-inter text-xs text-gray-400">{{ currentTestimonials[4].role }}</p>
@@ -184,7 +182,7 @@ const prevPage = () => {
                 </p>
               </div>
               <div class="flex items-center mt-auto">
-                <img :src="defaultAvatar" alt="Avatar" class="w-10 h-10 rounded-full object-cover mr-4 border border-gray-100" />
+                <img :src="getAvatarUrl(null, currentTestimonials[2].name)" alt="Avatar" class="w-10 h-10 rounded-full object-cover mr-4 border border-gray-100" />
                 <div>
                   <h4 class="font-poppins text-sm font-bold text-gray-950">{{ currentTestimonials[2].name }}</h4>
                   <p class="font-inter text-xs text-gray-400">{{ currentTestimonials[2].role }}</p>
@@ -203,7 +201,7 @@ const prevPage = () => {
                 </p>
               </div>
               <div class="flex items-center mt-auto">
-                <img :src="defaultAvatar" alt="Avatar" class="w-10 h-10 rounded-full object-cover mr-4 border border-gray-100" />
+                <img :src="getAvatarUrl(null, currentTestimonials[5].name)" alt="Avatar" class="w-10 h-10 rounded-full object-cover mr-4 border border-gray-100" />
                 <div>
                   <h4 class="font-poppins text-sm font-bold text-gray-950">{{ currentTestimonials[5].name }}</h4>
                   <p class="font-inter text-xs text-gray-400">{{ currentTestimonials[5].role }}</p>

@@ -2,27 +2,27 @@
 const steps = [
   {
     image: '/images/landing_page_images/ai_page_img.webp',
-    alt: 'AI Page illustration',
-    title: 'AI Page',
-    description: 'Users upload photos of used items, and the AI analyzes the materials to provide recycling ideas along with visualizations; users can then select an idea and connect with a suitable artisan.'
+    alt: 'Ilustrasi Halaman AI',
+    title: 'Halaman AI',
+    description: 'Pengguna mengunggah foto barang bekas, lalu AI menganalisis jenis bahan dan memberikan ide daur ulang kreatif beserta visualisasi produk baru.'
   },
   {
     image: '/images/landing_page_images/discussion_room_img.webp',
-    alt: 'Discussion Room illustration',
-    title: 'Discussion Room',
-    description: 'Users and artisans can discuss item details, costs, and shipping, as well as confirm the transaction via an agreement proposal once the user approves the submitted proposal.'
+    alt: 'Ilustrasi Ruang Diskusi',
+    title: 'Ruang Diskusi',
+    description: 'Pengguna dan pengrajin dapat berdiskusi secara langsung mengenai detail desain, negosiasi harga, metode pengiriman, hingga pengajuan proposal kesepakatan.'
   },
   {
     image: '/images/landing_page_images/tracking_progres_img.webp',
-    alt: 'Tracking Progres illustration',
-    title: 'Tracking Progres',
-    description: 'Users can view their order history and monitor the work process, from the initial stage to completion. Artisans update the job status and include photos showing the progress.'
+    alt: 'Ilustrasi Lacak Progres',
+    title: 'Lacak Progres',
+    description: 'Pengguna dapat memantau setiap tahapan pengerjaan secara real-time. Pengrajin mengupdate status pengerjaan disertai dengan unggahan foto progres fisik.'
   },
   {
     image: '/images/landing_page_images/looking_for_a_craftsman_img.png',
-    alt: 'Looking for a craftsman illustration',
-    title: 'Looking for a craftsman',
-    description: 'Users can search for artisans if they already have their own recycling ideas. Users can select artisans based on location, portfolio, ratings, and the types of materials accepted.'
+    alt: 'Ilustrasi Cari Pengrajin',
+    title: 'Cari Pengrajin',
+    description: 'Pengguna dapat mencari pengrajin secara mandiri berdasarkan lokasi terdekat, portofolio karya, tingkat rating penilaian, serta bahan daur ulang yang diterima.'
   }
 ]
 </script>
@@ -33,17 +33,17 @@ const steps = [
       
       <!-- Top Pill Tag -->
       <div class="border border-gray-900 rounded-full px-5 py-2.5 text-xs font-semibold tracking-wider text-gray-800 uppercase inline-block mb-6 select-none bg-white shadow-sm font-inter">
-        ways of working
+        cara kerja
       </div>
 
       <!-- Main Headline -->
       <h2 class="font-poppins text-4xl md:text-5xl font-medium text-gray-950 text-center mb-4 tracking-tight leading-tight">
-        Turn Used Items into More Valuable.
+        Ubah Barang Bekas Menjadi Lebih Berharga.
       </h2>
 
       <!-- Subtitle -->
       <p class="font-inter text-base md:text-lg text-gray-400 text-center max-w-4xl mb-16 leading-relaxed">
-        Follow these simple steps to easily and sustainably transform used items into valuable creations.
+        Ikuti langkah-langkah mudah berikut untuk menyulap barang bekas menjadi kreasi berharga secara berkelanjutan.
       </p>
 
       <!-- Steps Grid -->

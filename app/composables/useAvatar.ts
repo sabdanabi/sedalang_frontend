@@ -8,7 +8,7 @@ import { useRuntimeConfig } from '#app'
  */
 export const getAvatarUrl = (url?: string | null, seed: string = 'User'): string => {
   if (!url) {
-    return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(seed)}`
+    return `https://api.dicebear.com/9.x/pixel-art/svg?seed=${encodeURIComponent(seed)}`
   }
 
   // Check if it's already a full URL or data URI

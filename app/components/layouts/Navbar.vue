@@ -6,10 +6,10 @@ const isMobileMenuOpen = ref(false)
 const authStore = useAuthStore()
 
 const navLinks = [
-  { name: 'Home', path: '/', active: true },
-  { name: 'Explore', path: '/explore', active: false },
-  { name: 'QnA', path: '/qna', active: false },
-  { name: 'Testimoni', path: '/testimoni', active: false }
+  { name: 'Home', path: '/#hero' },
+  { name: 'Explore', path: '/#about' },
+  { name: 'QnA', path: '/#qna' },
+  { name: 'Testimoni', path: '/#testimoni' }
 ]
 
 const toggleMobileMenu = () => {
@@ -33,12 +33,7 @@ const toggleMobileMenu = () => {
             v-for="link in navLinks"
             :key="link.name"
             :to="link.path"
-            class="relative text-sm font-medium transition-colors duration-200 py-1 font-inter"
-            :class="[
-              link.active 
-                ? 'text-[#7A4D30] after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-full after:h-[2px] after:bg-[#7A4D30] after:rounded-full' 
-                : 'text-gray-500 hover:text-[#7A4D30]'
-            ]"
+            class="relative text-sm font-medium transition-colors duration-200 py-1 font-inter text-gray-500 hover:text-[#7A4D30]"
           >
             {{ link.name }}
           </NuxtLink>
@@ -59,13 +54,13 @@ const toggleMobileMenu = () => {
               to="/login"
               class="px-6 py-2.5 border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 text-sm font-medium rounded-full transition-all duration-200 font-inter"
             >
-              Login
+              Masuk
             </NuxtLink>
             <NuxtLink
               to="/register"
               class="px-6 py-2.5 bg-[#7A4D30] hover:bg-[#6A3F25] text-white text-sm font-medium rounded-full transition-all duration-200 shadow-sm hover:shadow active:scale-[0.98] font-inter"
             >
-              Sign up
+              Daftar
             </NuxtLink>
           </template>
         </div>
@@ -79,7 +74,7 @@ const toggleMobileMenu = () => {
             aria-controls="mobile-menu"
             :aria-expanded="isMobileMenuOpen"
           >
-            <span class="sr-only">Open main menu</span>
+            <span class="sr-only">Buka menu utama</span>
             <!-- Icon when menu is closed -->
             <svg
               v-if="!isMobileMenuOpen"
@@ -124,12 +119,7 @@ const toggleMobileMenu = () => {
             v-for="link in navLinks"
             :key="link.name"
             :to="link.path"
-            class="block px-3 py-2 rounded-md text-base font-medium transition-colors"
-            :class="[
-              link.active 
-                ? 'bg-[#7A4D30]/5 text-[#7A4D30]' 
-                : 'text-gray-600 hover:bg-gray-50 hover:text-[#7A4D30]'
-            ]"
+            class="block px-3 py-2 rounded-md text-base font-medium transition-colors text-gray-600 hover:bg-gray-50 hover:text-[#7A4D30]"
             @click="isMobileMenuOpen = false"
           >
             {{ link.name }}
@@ -151,14 +141,14 @@ const toggleMobileMenu = () => {
                 class="w-full text-center px-4 py-2.5 border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 text-base font-medium rounded-full transition-all duration-200"
                 @click="isMobileMenuOpen = false"
               >
-                Login
+                Masuk
               </NuxtLink>
               <NuxtLink
                 to="/register"
                 class="w-full text-center px-4 py-2.5 bg-[#7A4D30] hover:bg-[#6A3F25] text-white text-base font-medium rounded-full transition-all duration-200 shadow-sm"
                 @click="isMobileMenuOpen = false"
               >
-                Sign up
+                Daftar
               </NuxtLink>
             </template>
           </div>

@@ -12,16 +12,16 @@
       <!-- Center Diagram -->
       <div class="my-auto flex justify-center items-center py-8">
         <img 
-          src="/images/auth_img.webp" 
-          alt="Sirkula composting cycle illustration" 
-          class="w-full max-w-[340px] lg:max-w-[460px] h-auto object-contain"
+          src="/images/logo/logo-img.png" 
+          alt="SeDaLang illustration" 
+          class="w-full max-w-[280px] lg:max-w-[360px] h-auto object-contain"
         />
       </div>
 
       <!-- Bottom Slogan -->
       <div class="text-center mx-auto max-w-[280px] lg:max-w-[420px] font-inter">
         <p class="text-sm lg:text-base font-semibold leading-relaxed text-[#292929]/80 font-inter">
-            Pastikan Anda sudah memiliki akun sebelum menjelajahi destinasi wisata yang Anda inginkan
+            Ubah limbah anorganik Anda menjadi produk bermanfaat bersama pengrajin kreatif lokal
         </p>
       </div>
     </section>

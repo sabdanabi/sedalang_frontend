@@ -3,28 +3,28 @@ import { ref } from 'vue'
 
 const items = ref([
   {
-    question: 'What Is This Platform?',
-    answer: 'A platform that connects users with local craftsmen to transform used materials into valuable, customized products.',
+    question: 'Apa itu platform SeDaLang?',
+    answer: 'Sebuah platform yang menghubungkan pengguna dengan pengrajin lokal untuk menyulap bahan limbah menjadi produk kustom yang bernilai tinggi.',
     isOpen: true // First item open by default like the mockup design
   },
   {
-    question: 'How Does The Recycling Process Work?',
-    answer: 'Users upload photos of used items, the AI analyzes the materials to provide recycling ideas, and users select an idea to connect with a suitable artisan to finalize the design and shipping.',
+    question: 'Bagaimana proses daur ulang berjalan?',
+    answer: 'Pengguna mengunggah foto barang bekas, AI menganalisis bahan untuk memberikan ide daur ulang kreatif, lalu pengguna memilih ide tersebut untuk terhubung dengan pengrajin yang sesuai guna menyelesaikan desain dan pengiriman.',
     isOpen: false
   },
   {
-    question: 'How Does Smart Matching Find The Right Craftsman?',
-    answer: 'It matches artisans based on location, customer ratings, portfolios, and the specific materials they accept, ensuring you get the perfect fit for your project.',
+    question: 'Bagaimana Sistem Pencocokan Cerdas menemukan pengrajin yang tepat?',
+    answer: 'Sistem mencocokkan pengrajin berdasarkan lokasi terdekat, ulasan rating pelanggan, portofolio karya nyata, serta jenis bahan limbah yang mereka terima.',
     isOpen: false
   },
   {
-    question: 'Can I Discuss My Design And Budget With The Craftsman?',
-    answer: 'Yes! You can directly chat with the craftsman in the Discussion Room to align on the design, materials, timeline, and budget before approving the formal proposal.',
+    question: 'Apakah saya bisa mendiskusikan desain dan anggaran biaya dengan pengrajin?',
+    answer: 'Ya! Anda dapat langsung berdiskusi dengan pengrajin di Ruang Diskusi untuk menyelaraskan konsep desain, jenis bahan, estimasi waktu, serta anggaran biaya sebelum menyetujui proposal resmi.',
     isOpen: false
   },
   {
-    question: 'How Can I Send My Used Materials?',
-    answer: 'You can arrange material shipment via local logistics providers or deliver them directly to the craftsman’s workshop, with the method agreed upon in the transaction proposal.',
+    question: 'Bagaimana cara saya mengirimkan bahan bekas ke pengrajin?',
+    answer: 'Anda dapat mengatur pengiriman bahan melalui layanan kurir logistik lokal (seperti GoSend/GrabExpress) atau mengantarkannya langsung ke bengkel kerja pengrajin sesuai kesepakatan.',
     isOpen: false
   }
 ])
@@ -51,7 +51,7 @@ const toggleItem = (index: number) => {
 
       <!-- Main Headline -->
       <h2 class="font-poppins text-4xl md:text-5xl font-medium text-gray-950 text-center mb-16 tracking-tight leading-tight max-w-3xl">
-        Feel free to <span class="text-[#7A4D30]">ask anything</span> we're here to <span class="text-[#7A4D30]">answer</span> your questions!
+        Jangan ragu untuk <span class="text-[#7A4D30]">bertanya apa saja</span>, kami di sini untuk <span class="text-[#7A4D30]">menjawab</span> pertanyaan Anda!
       </h2>
 
       <!-- Accordion Container -->
@@ -78,7 +78,7 @@ const toggleItem = (index: number) => {
             <!-- Animated Plus to X Icon -->
             <div 
               class="relative w-6 h-6 flex items-center justify-center transition-transform duration-300 ease-in-out transform"
-              :class="{ 'rotate-134': item.isOpen }"
+              :class="{ 'rotate-135': item.isOpen }"
             >
               <!-- Horizontal line -->
               <span 
