@@ -123,7 +123,7 @@ onUnmounted(() => {
       
       <!-- Top Pill Tag (Aligns with layout guidelines) -->
       <div class="border border-gray-900 rounded-full px-5 py-2.5 text-xs font-semibold tracking-wider text-gray-800 uppercase inline-block mb-10 select-none bg-white shadow-sm font-inter">
-        Maps
+        Peta
       </div>
 
       <!-- Main Layout Grid -->
@@ -136,10 +136,10 @@ onUnmounted(() => {
         <!-- Right: Text Content -->
         <div class="lg:col-span-7 flex flex-col space-y-6">
           <h2 class="font-poppins text-7xl md:text-8xl font-medium text-gray-950 tracking-tight leading-none uppercase">
-            PLACES TO FIND <br /> ARTISANS
+            TEMPAT MENCARI <br /> PENGRAJIN
           </h2>
           <p class="font-inter text-lg md:text-xl text-gray-500 leading-relaxed max-w-xl">
-            Transform used household items into valuable products with the help of AI and local MSME artisans in Semarang.
+            Ubah barang bekas rumah tangga Anda menjadi produk bernilai tinggi dengan bantuan AI dan UMKM pengrajin lokal di Kota Semarang.
           </p>
         </div>
       </div>

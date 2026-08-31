@@ -3,10 +3,10 @@
     <img 
       src="/images/logo/logo.svg" 
       alt="SeDaLang Logo" 
-      class="w-8 h-8 object-contain" 
+      class="w-14 h-14 md:w-16 md:h-16 object-contain" 
     />
-    <span class="text-xl font-bold tracking-tight text-[#1A1A1A]">
+    <!-- <span class="text-xl font-bold tracking-tight text-[#1A1A1A]">
       SeDaLang
-    </span>
+    </span> -->
   </div>
 </template>
