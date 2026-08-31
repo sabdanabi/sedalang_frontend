@@ -165,8 +165,13 @@ export const useChatStore = defineStore('chat', () => {
     isLoading.value = true
     error.value = ''
     try {
-      const res = await api('/api/v1/chat/rooms', {
-        method: 'GET'
+      const res = await api(`/api/v1/chat/rooms?_t=${Date.now()}`, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       }) as ApiResponse<ChatRoom[]>
       rooms.value = res.data || []
       return res.data
@@ -210,8 +215,13 @@ export const useChatStore = defineStore('chat', () => {
     isLoading.value = true
     error.value = ''
     try {
-      const res = await api(`/api/v1/chat/rooms/${roomId}/messages`, {
-        method: 'GET'
+      const res = await api(`/api/v1/chat/rooms/${roomId}/messages?_t=${Date.now()}`, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       }) as ApiResponse<ChatMessage[]>
       messages.value = res.data || []
       return res.data
