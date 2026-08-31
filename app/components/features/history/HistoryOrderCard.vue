@@ -32,20 +32,20 @@ const formatPrice = (amount: number) => {
 
 const artisanName = computed(() => props.order.craftsman?.user?.fullName || 'Pengrajin')
 const artisanAvatar = computed(() => getAvatarUrl(props.order.craftsman?.user?.avatarUrl, artisanName.value))
-const productName = computed(() => props.order.proposal?.productName || 'Produk Daur Ulang')
+const productName = computed(() => props.order.productName || props.order.proposal?.productName || 'Produk Daur Ulang')
 const productImage = computed(() => '/images/default_images/default_img.webp')
 const materials = computed(() => {
-  const mats = props.order.proposal?.materialsNeeded || []
+  const mats = props.order.materialsNeeded || props.order.proposal?.materialsNeeded || []
   return mats.length > 0 ? `Material: ${mats.join(', ')}` : 'Material: -'
 })
 const shipping = computed(() => {
-  const method = props.order.proposal?.deliveryMethod
+  const method = props.order.deliveryMethod || props.order.proposal?.deliveryMethod
   if (method === 'GOSEND') return 'Pengiriman: GoSend dari pengrajin'
   if (method === 'DROP_OFF') return 'Pengiriman: Ambil Sendiri'
   return `Pengiriman: ${method || '-'}`
 })
-const price = computed(() => formatPrice(props.order.proposal?.price || 0))
-const totalPrice = computed(() => formatPrice(props.order.totalAmount || 0))
+const price = computed(() => formatPrice(props.order.price || props.order.proposal?.price || 0))
+const totalPrice = computed(() => formatPrice(props.order.price || props.order.proposal?.price || 0))
 const paymentMethod = computed(() => props.order.paymentMethod || props.order.proposal?.paymentMethod || '-')
 
 // Status badge config
