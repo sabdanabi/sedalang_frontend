@@ -160,24 +160,13 @@ const handleContactCraftsman = async () => {
     }
   }
 
-  // Fallback to latest idea from history
-  if (!finalIdeaId) {
-    try {
-      const api = useApi()
-      const res = await api('/api/v1/ai/history') as any
-      if (res.data && res.data.length > 0) {
-        const latestHistory = res.data[0]
-        if (latestHistory.ideas && latestHistory.ideas.length > 0) {
-          finalIdeaId = latestHistory.ideas[0].id
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load fallback idea history:', err)
-    }
-  }
-
   const craftsmanId = route.query.id as string
-  navigateTo(`/chat?craftsmanId=${craftsmanId}&ideaId=${finalIdeaId}&craftsmanName=${encodeURIComponent(profile.value.name)}`)
+  let chatUrl = `/chat?craftsmanId=${craftsmanId}&craftsmanName=${encodeURIComponent(profile.value.name)}`
+  if (finalIdeaId) {
+    chatUrl += `&ideaId=${finalIdeaId}`
+  }
+  
+  navigateTo(chatUrl)
 }
 
 // Save profile state

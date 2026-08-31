@@ -66,27 +66,14 @@ onMounted(async () => {
           await chatStore.fetchMessages(existingRoom.id)
         } else {
           // Try to get or create room
-          let activeIdeaId = ideaId
-          if (!activeIdeaId) {
-            activeIdeaId = localStorage.getItem('sedalang_active_idea_id') || ''
-            if (!activeIdeaId) {
-              const api = useApi()
-              const res = await api('/api/v1/ai/history') as any
-              if (res.data && res.data.length > 0) {
-                const latestHistory = res.data[0]
-                if (latestHistory.ideas && latestHistory.ideas.length > 0) {
-                  activeIdeaId = latestHistory.ideas[0].id
-                }
-              }
-            }
-          }
+          let activeIdeaId = ideaId || undefined
           
-          if (activeIdeaId) {
+          try {
             const room = await chatStore.createOrGetRoom(craftsmanId, activeIdeaId)
             chatStore.joinRoom(room.id)
             await chatStore.fetchMessages(room.id)
-          } else {
-            console.warn('Could not find active idea to start chat room.')
+          } catch (createErr) {
+            console.error('Failed to create/get chat room:', createErr)
             if (chatStore.rooms.length > 0) {
               const firstRoom = chatStore.rooms[0]
               chatStore.joinRoom(firstRoom.id)

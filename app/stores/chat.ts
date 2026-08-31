@@ -185,13 +185,17 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   // REST Action: Create or get existing chat room
-  const createOrGetRoom = async (craftsmanId: string, ideaId: string): Promise<ChatRoom> => {
+  const createOrGetRoom = async (craftsmanId: string, ideaId?: string): Promise<ChatRoom> => {
     isLoading.value = true
     error.value = ''
     try {
+      const body: any = { craftsmanId }
+      if (ideaId) {
+        body.ideaId = ideaId
+      }
       const res = await api('/api/v1/chat/rooms', {
         method: 'POST',
-        body: { craftsmanId, ideaId }
+        body
       }) as ApiResponse<ChatRoom>
       
       // Add to rooms if not already there

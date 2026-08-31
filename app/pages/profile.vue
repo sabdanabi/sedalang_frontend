@@ -143,6 +143,13 @@ const handleEditSubmit = async (updatedData: UserProfile) => {
     alert('Gagal memperbarui profil. Silakan coba lagi.')
   }
 }
+
+const handleContactUser = () => {
+  const targetUserId = route.query.id as string
+  if (targetUserId) {
+    navigateTo(`/chat?craftsmanId=${targetUserId}&craftsmanName=${encodeURIComponent(profile.value.name)}`)
+  }
+}
 </script>
 
 <template>
@@ -164,6 +171,7 @@ const handleEditSubmit = async (updatedData: UserProfile) => {
         :profile="profile"
         :isOwnProfile="isOwnProfile"
         @edit="showEditModal = true"
+        @chat="handleContactUser"
       />
 
       <!-- Grid columns: Bottom Left Info & Bottom Right Map -->

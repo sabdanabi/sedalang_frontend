@@ -82,23 +82,12 @@ const handleSelectCraftsman = async (craftsmanId: string, craftsmanName: string)
     finalIdeaId = localStorage.getItem('sedalang_active_idea_id') || ''
   }
 
-  // Fallback to latest idea from history
-  if (!finalIdeaId) {
-    try {
-      const api = useApi()
-      const res = await api('/api/v1/ai/history') as any
-      if (res.data && res.data.length > 0) {
-        const latestHistory = res.data[0]
-        if (latestHistory.ideas && latestHistory.ideas.length > 0) {
-          finalIdeaId = latestHistory.ideas[0].id
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load fallback idea history:', err)
-    }
+  let chatUrl = `/chat?craftsmanId=${craftsmanId}&craftsmanName=${encodeURIComponent(craftsmanName)}`
+  if (finalIdeaId) {
+    chatUrl += `&ideaId=${finalIdeaId}`
   }
-
-  navigateTo(`/chat?craftsmanId=${craftsmanId}&ideaId=${finalIdeaId}&craftsmanName=${encodeURIComponent(craftsmanName)}`)
+  
+  navigateTo(chatUrl)
 }
 
 const handleViewProfile = (id: string) => {
