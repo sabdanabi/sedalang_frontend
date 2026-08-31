@@ -100,11 +100,11 @@ const goToProfile = (craftsmanId: string | number) => {
 }
 
 const goToChat = (craftsmanName: string) => {
-  const c = craftsmanStore.matchedCraftsmen.find(item => 
+  const c = craftsmanStore.matchedCraftsmen.find(item =>
     (item.user?.fullName || item.fullName || '') === craftsmanName
   )
   if (c) {
-    navigateTo(`/chat?craftsmanId=${c.id}&ideaId=${ideaId.value || ''}&craftsmanName=${encodeURIComponent(craftsmanName)}`)
+    navigateTo(`/chat?craftsmanId=${c.id}&ideaId=${ideaId.value || ''}&craftsmanName=${encodeURIComponent(craftsmanName)}&sendIdea=true`)
   } else {
     navigateTo(`/chat?craftsman=${encodeURIComponent(craftsmanName)}`)
   }

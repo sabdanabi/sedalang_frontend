@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Dokumentasi API & Skema Database Sedalang (untuk FE)</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    h1, h2, h3 {
+      color: #111;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 8px;
+    }
+    h1 { margin-bottom: 30px; }
+    h2 { margin-top: 40px; }
+    pre {
+      background-color: #f1f1f1;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 15px;
+      overflow-x: auto;
+      font-family: "Courier New", Courier, monospace;
+    }
+    code {
+      font-family: "Courier New", Courier, monospace;
+      background-color: #eee;
+      padding: 2px 5px;
+      border-radius: 3px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      font-weight: bold;
+      border-radius: 4px;
+      font-size: 0.85em;
+      color: white;
+    }
+    .badge-get { background-color: #28a745; }
+    .badge-post { background-color: #007bff; }
+    .badge-patch { background-color: #e0a800; }
+    .badge-delete { background-color: #dc3545; }
+    .endpoint {
+      margin-bottom: 30px;
+      background: white;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .endpoint-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .endpoint-path {
+      font-size: 1.2em;
+      font-weight: bold;
+      font-family: monospace;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .db-model {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dokumentasi API & Skema Database Sedalang (untuk FE)</h1>
+  <p>Halaman ini berisi peta lengkap endpoint API backend <code>sedalang_be</code> beserta skema database Prisma untuk mempermudah pengerjaan frontend.</p>
+
+  <h2>1. Ringkasan Endpoint API</h2>
+
+  <h3>Modul: Auth (<code>/auth</code>, <code>/users</code>)</h3>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-post">POST</span>
+      <span class="endpoint-path">/auth/register</span>
+    </div>
+    <p><strong>Deskripsi:</strong> Register user baru (default role: <code>USER</code>)</p>
+    <p><strong>Request Body (JSON):</strong></p>
+    <pre>{
+  "email": "string (email, required)",
+  "password": "string (min 6 chars, required)",
+  "fullName": "string (required)"
+}</pre>
+    <p><strong>Response (201):</strong> JWT Token <code>{ "token": "string" }</code></p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-post">POST</span>
+      <span class="endpoint-path">/auth/login</span>
+    </div>
+    <p><strong>Deskripsi:</strong> Login dengan email & password</p>
+    <p><strong>Request Body (JSON):</strong></p>
+    <pre>{
+  "email": "string (email, required)",
+  "password": "string (required)"
+}</pre>
+    <p><strong>Response (200):</strong> JWT Token <code>{ "token": "string" }</code></p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-get">GET</span>
+      <span class="endpoint-path">/users/me</span>
+    </div>
+    <p><strong>Headers:</strong> <code>Authorization: Bearer &lt;JWT&gt;</code></p>
+    <p><strong>Deskripsi:</strong> Dapatkan data profil user yang sedang login</p>
+    <p><strong>Response (200):</strong> Detail user (termasuk role, avatarUrl, dll)</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-patch">PATCH</span>
+      <span class="endpoint-path">/users/me</span>
+    </div>
+    <p><strong>Headers:</strong> <code>Authorization: Bearer &lt;JWT&gt;</code></p>
+    <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+    <p><strong>Deskripsi:</strong> Update data profil user (termasuk upload avatar)</p>
+    <p><strong>Multipart Fields:</strong></p>
+    <ul>
+      <li><code>fullName</code>: string (optional)</li>
+      <li><code>phoneNumber</code>: string (optional)</li>
+      <li><code>address</code>: string (optional)</li>
+      <li><code>latitude</code>: float (optional)</li>
+      <li><code>longitude</code>: float (optional)</li>
+      <li><code>avatar</code>: file (optional, image)</li>
+    </ul>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-patch">PATCH</span>
+      <span class="endpoint-path">/users/me/role</span>
+    </div>
+    <p><strong>Headers:</strong> <code>Authorization: Bearer &lt;JWT&gt;</code></p>
+    <p><strong>Deskripsi:</strong> Update role user saat onboarding (<code>USER</code> atau <code>CRAFTSMAN</code>)</p>
+    <p><strong>Request Body:</strong> <code>{ "role": "USER" | "CRAFTSMAN" }</code></p>
+    <p><strong>Response (200):</strong> Mengembalikan token JWT baru</p>
+  </div>
+
+  <h3>Modul: Onboarding (<code>/onboarding</code>)</h3>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-post">POST</span>
+      <span class="endpoint-path">/onboarding/craftman</span>
+    </div>
+    <p><strong>Headers:</strong> <code>Authorization: Bearer &lt;JWT&gt;</code></p>
+    <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+    <p><strong>Deskripsi:</strong> Onboarding pengrajin — isi data craftsman, opsional upload portofolio</p>
+    <p><strong>Multipart Fields:</strong></p>
+    <ul>
+      <li><code>location</code>: string (required)</li>
+      <li><code>latitude</code>: float (required)</li>
+      <li><code>longitude</code>: float (required)</li>
+      <li><code>skills</code>: array of string (di-serialize / dikirim terpisah)</li>
+      <li><code>craftType</code>: string (required)</li>
+      <li><code>portfolios</code>: files (optional, max 5 images)</li>
+    </ul>
+    <p><strong>Response (200):</strong> Token baru dengan role <code>CRAFTSMAN</code></p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-post">POST</span>
+      <span class="endpoint-path">/onboarding/skip</span>
+    </div>
+    <p><strong>Headers:</strong> <code>Authorization: Bearer &lt;JWT&gt;</code></p>
+    <p><strong>Deskripsi:</strong> Melewati onboarding, user tetap berstatus sebagai user biasa</p>
+  </div>
+
+  <h3>Modul: Craftsmen (<code>/craftsmen</code>)</h3>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-get">GET</span>
+      <span class="endpoint-path">/craftsmen</span>
+    </div>
+    <p><strong>Query Parameters:</strong></p>
+    <ul>
+      <li><code>page</code>: number (default 1)</li>
+      <li><code>limit</code>: number (default 10)</li>
+      <li><code>search</code>: string (nama/kerajinan)</li>
+      <li><code>skill</code>: string (filter keahlian)</li>
+      <li><code>location</code>: string (filter lokasi)</li>
+      <li><code>minRating</code>: number (0-5)</li>
+      <li><code>sortBy</code>: <code>"rating" | "newest" | "name"</code> (default "rating")</li>
+    </ul>
+    <p><strong>Response (200):</strong> Array of craftsmen + pagination metadata</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-get">GET</span>
+      <span class="endpoint-path">/craftsmen/filters</span>
+    </div>
+    <p><strong>Deskripsi:</strong> Data dropdown filter: daftar unik <code>skills</code> dan <code>locations</code> yang tersedia di database.</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-get">GET</span>
+      <span class="endpoint-path">/craftsmen/match/:ideaId</span>
+    </div>
+    <p><strong>Headers:</strong> <code>Authorization: Bearer &lt;JWT&gt;</code></p>
+    <p><strong>Deskripsi:</strong> Auto-match pengrajin terdekat/terbaik berdasarkan skill yang dibutuhkan dari suatu ide AI</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-post">POST</span>
+      <span class="endpoint-path">/craftsmen/search</span>
+    </div>
+    <p><strong>Headers:</strong> <code>Authorization: Bearer &lt;JWT&gt;</code></p>
+    <p><strong>Deskripsi:</strong> Cari pengrajin manual berdasarkan koordinat jarak terdekat dan kemiripan keahlian</p>
+    <p><strong>Request Body (JSON):</strong></p>
+    <pre>{
+  "query": "string (optional)",
+  "skills": ["string (optional)"],
+  "latitude": 0.0,
+  "longitude": 0.0
+}</pre>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-get">GET</span>
+      <span class="endpoint-path">/craftsmen/:id</span>
+    </div>
+    <p><strong>Deskripsi:</strong> Lihat profil publik pengrajin berdasarkan ID-nya</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-patch">PATCH</span>
+      <span class="endpoint-path">/craftsmen/me</span>
+    </div>
+    <p><strong>Role:</strong> <code>CRAFTSMAN</code></p>
+    <p><strong>Request Body (JSON):</strong></p>
+    <pre>{
+  "location": "string (optional)",
+  "latitude": 0.0,
+  "longitude": 0.0,
+  "skills": ["string"],
+  "craftType": "string"
+}</pre>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-post">POST</span>
+      <span class="endpoint-path">/craftsmen/me/portfolios</span>
+    </div>
+    <p><strong>Role:</strong> <code>CRAFTSMAN</code>, <code>multipart/form-data</code></p>
+    <p><strong>Multipart Fields:</strong> <code>images</code> (multiple files, max 5)</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-delete">DELETE</span>
+      <span class="endpoint-path">/craftsmen/me/portfolios</span>
+    </div>
+    <p><strong>Role:</strong> <code>CRAFTSMAN</code></p>
+    <p><strong>Request Body (JSON):</strong> <code>{ "url": "string (url gambar portofolio)" }</code></p>
+  </div>
+
+  <h3>Modul: AI (<code>/ai</code>)</h3>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-post">POST</span>
+      <span class="endpoint-path">/ai/analyze-ideas</span>
+    </div>
+    <p><strong>Headers:</strong> <code>Authorization: Bearer &lt;JWT&gt;</code></p>
+    <p><strong>Content-Type:</strong> <code>multipart/form-data</code></p>
+    <p><strong>Multipart Fields:</strong></p>
+    <ul>
+      <li><code>image</code>: file (required, image)</li>
+      <li><code>description</code>: string (optional)</li>
+    </ul>
+    <p><strong>Response (201):</strong> Mengembalikan objek analisis material dan list 3 rekomendasi ide.</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-get">GET</span>
+      <span class="endpoint-path">/ai/history</span>
+    </div>
+    <p><strong>Deskripsi:</strong> Riwayat analisis AI milik user</p>
+  </div>
+
+  <h3>Modul: Chat & Proposal (<code>/chat</code>)</h3>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-post">POST</span>
+      <span class="endpoint-path">/chat/rooms</span>
+    </div>
+    <p><strong>Headers:</strong> <code>Authorization: Bearer &lt;JWT&gt;</code></p>
+    <p><strong>Request Body (JSON):</strong></p>
+    <pre>{
+  "craftsmanId": "string (uuid, required)",
+  "ideaId": "string (uuid, optional, bisa kosong untuk chat non-ide)"
+}</pre>
+    <p><strong>Response (201):</strong> Mengembalikan objek <code>ChatRoom</code></p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-get">GET</span>
+      <span class="endpoint-path">/chat/rooms</span>
+    </div>
+    <p><strong>Deskripsi:</strong> Daftar semua chat room milik user (baik sebagai user biasa maupun pengrajin)</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-get">GET</span>
+      <span class="endpoint-path">/chat/rooms/:roomId/messages</span>
+    </div>
+    <p><strong>Deskripsi:</strong> Histori pesan dalam chat room</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-post">POST</span>
+      <span class="endpoint-path">/chat/rooms/:roomId/proposals</span>
+    </div>
+    <p><strong>Role:</strong> <code>CRAFTSMAN</code></p>
+    <p><strong>Request Body (JSON):</strong></p>
+    <pre>{
+  "productName": "string (required)",
+  "price": 150000,
+  "materialsNeeded": ["paku", "cat"],
+  "deliveryMethod": "GOSEND" | "DROP_OFF",
+  "estimatedCompletionDate": "2026-09-15 (ISO date string)",
+  "paymentMethod": "string (e.g. BANK_TRANSFER)",
+  "bankName": "BCA (optional)",
+  "bankAccountNumber": "123 (optional)",
+  "bankAccountName": "Budi (optional)"
+}</pre>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-patch">PATCH</span>
+      <span class="endpoint-path">/chat/proposals/:proposalId/accept</span>
+    </div>
+    <p><strong>Role:</strong> <code>USER</code></p>
+    <p><strong>Deskripsi:</strong> User menerima proposal dan sistem otomatis men-generate <code>Order</code> dengan token pembayaran Midtrans.</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-patch">PATCH</span>
+      <span class="endpoint-path">/chat/proposals/:proposalId/reject</span>
+    </div>
+    <p><strong>Role:</strong> <code>USER</code></p>
+    <p><strong>Deskripsi:</strong> Menolak proposal</p>
+  </div>
+
+  <h3>Modul: Orders (<code>/orders</code>)</h3>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-get">GET</span>
+      <span class="endpoint-path">/orders</span>
+    </div>
+    <p><strong>Deskripsi:</strong> Daftar semua order (buyer atau craftsman)</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-get">GET</span>
+      <span class="endpoint-path">/orders/:orderId</span>
+    </div>
+    <p><strong>Deskripsi:</strong> Detail order & progress timeline</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-post">POST</span>
+      <span class="endpoint-path">/orders/:orderId/progress</span>
+    </div>
+    <p><strong>Role:</strong> <code>CRAFTSMAN</code></p>
+    <p><strong>Request Body (JSON):</strong></p>
+    <pre>{
+  "title": "string",
+  "description": "string",
+  "status": "IN_PROGRESS" | "COMPLETED" (optional, untuk update status order sekaligus)
+}</pre>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-post">POST</span>
+      <span class="endpoint-path">/orders/:orderId/media</span>
+    </div>
+    <p><strong>Role:</strong> <code>CRAFTSMAN</code>, <code>multipart/form-data</code></p>
+    <p><strong>Multipart Fields:</strong> <code>images</code> (multiple files, max 5)</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-patch">PATCH</span>
+      <span class="endpoint-path">/orders/:orderId/status</span>
+    </div>
+    <p><strong>Role:</strong> <code>CRAFTSMAN</code></p>
+    <p><strong>Request Body (JSON):</strong> <code>{ "status": "PENDING" | "PAID" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" }</code></p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-post">POST</span>
+      <span class="endpoint-path">/orders/:orderId/check-payment</span>
+    </div>
+    <p><strong>Role:</strong> <code>USER</code></p>
+    <p><strong>Deskripsi:</strong> Manual trigger sync status pembayaran ke Midtrans.</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-post">POST</span>
+      <span class="endpoint-path">/orders/retry/:proposalId</span>
+    </div>
+    <p><strong>Role:</strong> <code>USER</code></p>
+    <p><strong>Deskripsi:</strong> Regenerate link Midtrans baru untuk proposal yang sudah accepted namun gagal/expired pembayarannya.</p>
+  </div>
+
+  <div class="endpoint">
+    <div class="endpoint-header">
+      <span class="badge badge-patch">PATCH</span>
+      <span class="endpoint-path">/orders/:orderId/rating</span>
+    </div>
+    <p><strong>Role:</strong> <code>USER</code></p>
+    <p><strong>Request Body (JSON):</strong> <code>{ "rating": 1 sampai 5 }</code></p>
+  </div>
+
+  <h2>2. WebSocket (Socket.io) Event</h2>
+  <p>Dipakai untuk chat real-time. Koneksi membutuhkan token JWT di parameter <code>auth.token</code>.</p>
+  <ul>
+    <li><strong>Koneksi:</strong> Kirim <code>token</code> saat inisiasi socket connection: <code>io(url, { auth: { token } })</code></li>
+    <li><strong>Join Room:</strong> Emit event <code>joinRoom</code> dengan isi data <code>roomId</code> (string UUID) untuk mendengarkan pesan masuk di room tersebut.</li>
+    <li><strong>Send Message:</strong> Emit event <code>sendMessage</code> dengan payload:
+      <pre>{
+  "roomId": "string (uuid)",
+  "content": "string (max 2000 chars)"
+}</pre>
+    </li>
+    <li><strong>Mark Read:</strong> Emit event <code>readMessages</code> dengan payload <code>roomId</code> (string UUID) untuk menandai pesan-pesan sudah dibaca.</li>
+    <li><strong>Event dari Server ke Client:</strong>
+      <ul>
+        <li><code>newMessage</code>: payload berisi objek <code>ChatMessage</code> baru.</li>
+        <li><code>messagesRead</code>: ter-trigger saat pesan ditandai telah dibaca.</li>
+        <li><code>newProposal</code>: payload berisi objek <code>Proposal</code> baru.</li>
+        <li><code>proposalUpdated</code>: status proposal berubah (accepted/rejected).</li>
+        <li><code>orderUpdated</code>: status order/progress berubah.</li>
+        <li><code>authError</code> / <code>error</code>: jika otentikasi gagal atau terjadi error lainnya.</li>
+      </ul>
+    </li>
+  </ul>
+
+  <h2>3. Skema Database Prisma (Model Utama)</h2>
+
+  <div class="db-model">
+    <h3>User</h3>
+    <table>
+      <tr><th>Field</th><th>Tipe Data</th><th>Keterangan</th></tr>
+      <tr><td>id</td><td>Uuid (String)</td><td>Primary Key</td></tr>
+      <tr><td>email</td><td>String</td><td>Unique</td></tr>
+      <tr><td>fullName</td><td>String</td><td>Nama lengkap</td></tr>
+      <tr><td>phoneNumber</td><td>String (optional)</td><td>Nomor telepon</td></tr>
+      <tr><td>avatarUrl</td><td>String (optional)</td><td>Foto profil</td></tr>
+      <tr><td>address</td><td>String (optional)</td><td>Alamat manual</td></tr>
+      <tr><td>latitude / longitude</td><td>Float (optional)</td><td>Koordinat lokasi user</td></tr>
+      <tr><td>role</td><td>Role (Enum)</td><td><code>USER</code> | <code>CRAFTSMAN</code> | <code>ADMIN</code></td></tr>
+    </table>
+  </div>
+
+  <div class="db-model">
+    <h3>Craftsman</h3>
+    <table>
+      <tr><th>Field</th><th>Tipe Data</th><th>Keterangan</th></tr>
+      <tr><td>id</td><td>Uuid (String)</td><td>Primary Key</td></tr>
+      <tr><td>userId</td><td>Uuid (String)</td><td>Fk ke User (Unique)</td></tr>
+      <tr><td>location</td><td>String</td><td>Nama kota/kabupaten</td></tr>
+      <tr><td>skills</td><td>String[]</td><td>Daftar keahlian (contoh: ["kayu", "plastik"])</td></tr>
+      <tr><td>craftType</td><td>String</td><td>Tipe kerajinan fokus utama</td></tr>
+      <tr><td>portfolioUrls</td><td>String[]</td><td>Link gambar portofolio</td></tr>
+      <tr><td>averageRating</td><td>Float</td><td>Rating rata-rata (default 0)</td></tr>
+      <tr><td>reviewCount</td><td>Int</td><td>Jumlah rating yang diberikan</td></tr>
+      <tr><td>completedOrdersCount</td><td>Int</td><td>Order selesai</td></tr>
+    </table>
+  </div>
+
+  <div class="db-model">
+    <h3>AiRecommendedIdea</h3>
+    <table>
+      <tr><th>Field</th><th>Tipe Data</th><th>Keterangan</th></tr>
+      <tr><td>id</td><td>Uuid (String)</td><td>Primary Key</td></tr>
+      <tr><td>analysisId</td><td>Uuid (String)</td><td>Fk ke riwayat analisis</td></tr>
+      <tr><td>ideaTitle</td><td>String</td><td>Judul ide kerajinan daur ulang</td></tr>
+      <tr><td>description</td><td>String</td><td>Deskripsi ide</td></tr>
+      <tr><td>difficultyLevel</td><td>Enum</td><td><code>EASY</code> | <code>MEDIUM</code> | <code>HARD</code></td></tr>
+      <tr><td>imageUrl</td><td>String</td><td>URL visualisasi gambar ide dari AI</td></tr>
+      <tr><td>materialsNeeded</td><td>String[]</td><td>Bahan dibutuhkan</td></tr>
+      <tr><td>toolsNeeded</td><td>String[]</td><td>Alat dibutuhkan</td></tr>
+      <tr><td>craftsmanSkills</td><td>String[]</td><td>Skill pengrajin yang cocok untuk ide ini</td></tr>
+      <tr><td>steps</td><td>String[]</td><td>Langkah pembuatan jika ingin buat sendiri</td></tr>
+    </table>
+  </div>
+
+  <div class="db-model">
+    <h3>ChatRoom & Proposal</h3>
+    <p>Relasi unik: <code>userId</code> + <code>craftsmanId</code> + <code>ideaId</code>. Jika user langsung chat tanpa ide AI, <code>ideaId</code> bernilai <code>null</code>.</p>
+    <p><strong>Proposal</strong> dibuat oleh pengrajin di dalam room untuk menawarkan pengerjaan barang.</p>
+    <table>
+      <tr><th>Field Proposal</th><th>Tipe Data</th><th>Keterangan</th></tr>
+      <tr><td>id</td><td>Uuid</td><td>Primary Key</td></tr>
+      <tr><td>productName</td><td>String</td><td>Nama produk kesepakatan</td></tr>
+      <tr><td>price</td><td>Int</td><td>Harga penawaran Rupiah</td></tr>
+      <tr><td>status</td><td>Enum</td><td><code>PENDING</code> | <code>ACCEPTED</code> | <code>REJECTED</code></td></tr>
+    </table>
+  </div>
+
+  <div class="db-model">
+    <h3>Order & OrderProgress</h3>
+    <p><strong>Order</strong> dibuat otomatis ketika proposal berstatus <code>ACCEPTED</code>. Terintegrasi Midtrans.</p>
+    <table>
+      <tr><th>Field Order</th><th>Tipe Data</th><th>Keterangan</th></tr>
+      <tr><td>id</td><td>Uuid</td><td>Primary Key</td></tr>
+      <tr><td>status</td><td>Enum</td><td><code>PENDING</code> | <code>PAID</code> | <code>IN_PROGRESS</code> | <code>COMPLETED</code> | <code>CANCELLED</code></td></tr>
+      <tr><td>midtransRedirectUrl</td><td>String</td><td>URL pembayaran Midtrans snap</td></tr>
+      <tr><td>progressImages</td><td>String[]</td><td>Bukti foto proses pengerjaan pengrajin</td></tr>
+      <tr><td>rating</td><td>Int</td><td>Penilaian dari user setelah pengerjaan (1-5)</td></tr>
+    </table>
+  </div>
+</body>
+</html>
