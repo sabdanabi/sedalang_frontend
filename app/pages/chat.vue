@@ -70,7 +70,7 @@ onMounted(async () => {
             chatStore.rooms.splice(index, 1)
             chatStore.rooms.unshift(existingRoom)
           }
-          chatStore.joinRoom(existingRoom.id)
+          await chatStore.joinRoom(existingRoom.id)
           await chatStore.fetchMessages(existingRoom.id)
           targetRoomId = existingRoom.id
           ideaTitle = existingRoom.idea?.ideaTitle || ''
@@ -80,7 +80,7 @@ onMounted(async () => {
 
           try {
             const room = await chatStore.createOrGetRoom(craftsmanId, activeIdeaId)
-            chatStore.joinRoom(room.id)
+            await chatStore.joinRoom(room.id)
             await chatStore.fetchMessages(room.id)
             targetRoomId = room.id
             ideaTitle = room.idea?.ideaTitle || ''
@@ -88,7 +88,7 @@ onMounted(async () => {
             console.error('Failed to create/get chat room:', createErr)
             if (chatStore.rooms.length > 0) {
               const firstRoom = chatStore.rooms[0]
-              chatStore.joinRoom(firstRoom.id)
+              await chatStore.joinRoom(firstRoom.id)
               await chatStore.fetchMessages(firstRoom.id)
             }
           }
@@ -165,23 +165,23 @@ ${stepsText}`
     } else if (craftsmanParam || craftsmanNameParam) {
       const searchName = (craftsmanParam || craftsmanNameParam).toLowerCase()
       // Find existing room matching the craftsman name
-      const room = chatStore.rooms.find(r => 
+      const room = chatStore.rooms.find(r =>
         (r.craftsman?.user?.fullName || '').toLowerCase().includes(searchName) ||
         (r.user?.fullName || '').toLowerCase().includes(searchName)
       )
       if (room) {
-        chatStore.joinRoom(room.id)
+        await chatStore.joinRoom(room.id)
         await chatStore.fetchMessages(room.id)
       } else if (chatStore.rooms.length > 0) {
         const firstRoom = chatStore.rooms[0]
-        chatStore.joinRoom(firstRoom.id)
+        await chatStore.joinRoom(firstRoom.id)
         await chatStore.fetchMessages(firstRoom.id)
       }
     } else {
       // Default select the first room if any
       if (chatStore.rooms.length > 0) {
         const firstRoom = chatStore.rooms[0]
-        chatStore.joinRoom(firstRoom.id)
+        await chatStore.joinRoom(firstRoom.id)
         await chatStore.fetchMessages(firstRoom.id)
       }
     }
@@ -193,7 +193,7 @@ onUnmounted(() => {
 })
 
 const selectConversation = async (room: any) => {
-  chatStore.joinRoom(room.id)
+  await chatStore.joinRoom(room.id)
   await chatStore.fetchMessages(room.id)
 }
 

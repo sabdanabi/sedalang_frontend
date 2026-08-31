@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useApi } from '~/composables/useApiFetch'
 import { useCookie, useRuntimeConfig } from '#app'
 import { io, type Socket } from 'socket.io-client'
+import { useAuthStore } from './auth'
 
 export interface ChatMessage {
   id: string
@@ -112,6 +113,7 @@ interface ApiResponse<T = unknown> {
 export const useChatStore = defineStore('chat', () => {
   const api = useApi()
   const tokenCookie = useCookie<string | null>('sedalang_token')
+  const authStore = useAuthStore()
   
   const rooms = ref<ChatRoom[]>([])
   const activeRoomId = ref<string | null>(null)
@@ -380,6 +382,8 @@ export const useChatStore = defineStore('chat', () => {
         if (!messages.value.some(m => m.id === msg.id)) {
           messages.value.push(msg)
         }
+        // Emit readMessages receipt back to backend immediately
+        socket.value.emit('readMessages', msg.roomId)
       }
 
       // Update room lastMessage in the sidebar
@@ -391,6 +395,20 @@ export const useChatStore = defineStore('chat', () => {
         }
         if (msg.roomId !== activeRoomId.value) {
           room.unreadCount++
+        } else {
+          room.unreadCount = 0
+        }
+      }
+    })
+
+    // Listen for read receipt notifications from other clients
+    socket.value.on('messagesRead', (data: { roomId: string; readBy: string; count: number }) => {
+      console.log('Socket messagesRead received:', data)
+      const loggedInUserId = authStore.user?.id
+      if (data.readBy === loggedInUserId) {
+        const room = rooms.value.find(r => r.id === data.roomId)
+        if (room) {
+          room.unreadCount = 0
         }
       }
     })
@@ -466,6 +484,13 @@ export const useChatStore = defineStore('chat', () => {
     if (socket.value) {
       console.log('Emitting joinRoom for roomId:', roomId)
       socket.value.emit('joinRoom', roomId)
+      socket.value.emit('readMessages', roomId)
+    }
+
+    // Clear unread count locally when joining room
+    const room = rooms.value.find(r => r.id === roomId)
+    if (room) {
+      room.unreadCount = 0
     }
   }
 
