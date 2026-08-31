@@ -21,9 +21,9 @@ async function main() {
       body: JSON.stringify({
         fullName: 'Test FullName',
         phoneNumber: '081234567890',
-        location: null,
-        latitude: null,
-        longitude: null
+        address: 'Semarang Tengah, Jawa Tengah',
+        latitude: -6.9806,
+        longitude: 110.4208
       })
     });
     const data = await res.json();

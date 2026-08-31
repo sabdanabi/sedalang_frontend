@@ -66,6 +66,8 @@ const onAvatarSelected = (e: Event) => {
   }
 }
 
+const isLocating = ref(false)
+
 // Geolocation lookup for current location address text
 const handleGetMyLocation = () => {
   if (!navigator.geolocation) {
@@ -73,16 +75,40 @@ const handleGetMyLocation = () => {
     return
   }
 
+  isLocating.value = true
+
   navigator.geolocation.getCurrentPosition(
-    (position) => {
+    async (position) => {
       const { latitude, longitude } = position.coords
       formLatitude.value = latitude
       formLongitude.value = longitude
-      formLocation.value = 'Semarang Tengah, Jawa Tengah'
+      
+      // Try reverse geocoding to get a real address text!
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`)
+        const data = await res.json()
+        if (data && data.display_name) {
+          const address = data.address
+          const city = address.city || address.town || address.municipality || address.county || ''
+          const state = address.state || ''
+          if (city) {
+            formLocation.value = `${city}, ${state}`
+          } else {
+            formLocation.value = data.display_name.split(',').slice(0, 3).join(',').trim()
+          }
+        } else {
+          formLocation.value = 'Semarang Tengah, Jawa Tengah'
+        }
+      } catch (err) {
+        formLocation.value = 'Semarang Tengah, Jawa Tengah'
+      }
+      
+      isLocating.value = false
       alert(`Lokasi terdeteksi! Koordinat: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
     },
     (err) => {
       console.error(err)
+      isLocating.value = false
       alert('Gagal melacak lokasi. Pastikan GPS aktif dan izin diberikan.')
     }
   )
@@ -190,13 +216,18 @@ const handleFormSubmit = () => {
                 <button
                   type="button"
                   @click="handleGetMyLocation"
-                  class="bg-[#7A4D30]/5 text-[#7A4D30] border border-[#7A4D30]/20 hover:bg-[#7A4D30]/10 px-4 rounded-2xl text-xs font-bold font-inter cursor-pointer focus:outline-none flex-shrink-0 flex items-center justify-center gap-1"
+                  :disabled="isLocating"
+                  class="bg-[#7A4D30]/5 text-[#7A4D30] border border-[#7A4D30]/20 hover:bg-[#7A4D30]/10 px-4 rounded-2xl text-xs font-bold font-inter cursor-pointer focus:outline-none flex-shrink-0 flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
+                  <svg v-if="isLocating" class="animate-spin h-3.5 w-3.5 text-[#7A4D30]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                   </svg>
-                  Lokasi Saya
+                  {{ isLocating ? 'Mencari...' : 'Lokasi Saya' }}
                 </button>
               </div>
             </div>

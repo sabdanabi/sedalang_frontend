@@ -209,7 +209,7 @@ export const useAuthStore = defineStore('auth', () => {
         formData.append('phoneNumber', data.phoneNumber)
       }
       if (data.location !== undefined) {
-        formData.append('location', data.location || '')
+        formData.append('address', data.location || '')
       }
       if (data.latitude !== undefined && data.latitude !== null) {
         formData.append('latitude', String(data.latitude))
@@ -223,7 +223,7 @@ export const useAuthStore = defineStore('auth', () => {
       body = {
         fullName: data.fullName,
         phoneNumber: data.phoneNumber || null,
-        location: data.location !== undefined ? data.location : undefined,
+        address: data.location !== undefined ? data.location : undefined,
         latitude: data.latitude !== undefined ? data.latitude : undefined,
         longitude: data.longitude !== undefined ? data.longitude : undefined
       }

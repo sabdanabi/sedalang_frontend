@@ -44,7 +44,7 @@ const loadProfile = async () => {
 
       profile.value = {
         name: userData.fullName || '',
-        location: userData.location || 'Semarang Tengah, Jawa Tengah',
+        location: userData.address || 'Semarang Tengah, Jawa Tengah',
         email: userData.email || '',
         phone: userData.phoneNumber || '',
         avatar: getAvatarUrl(userData.avatarUrl, userData.fullName || 'User'),
