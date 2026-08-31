@@ -17,6 +17,8 @@ const price = ref<number | ''>('')
 const estimatedCompletionDate = ref('')
 const paymentMethod = ref('')
 const deliveryMethod = ref('')
+const selectedBank = ref('')
+const accountNumber = ref('')
 const isSubmitting = ref(false)
 
 const resetForm = () => {
@@ -26,6 +28,8 @@ const resetForm = () => {
   estimatedCompletionDate.value = ''
   paymentMethod.value = ''
   deliveryMethod.value = ''
+  selectedBank.value = ''
+  accountNumber.value = ''
   isSubmitting.value = false
 }
 
@@ -170,6 +174,33 @@ const handleFormSubmit = () => {
                   <option value="GOSEND">GOSEND (Kurir Lokal)</option>
                   <option value="Ambil Sendiri">Ambil Sendiri (DROP_OFF)</option>
                 </select>
+            </div>
+
+            <!-- Bank & Nomor Rekening (Row) -->
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Pilihan Bank -->
+              <div class="flex flex-col gap-1.5">
+                <label class="font-poppins text-xs font-bold text-gray-950">Pilihan Bank (Formalitas)</label>
+                <select
+                  v-model="selectedBank"
+                  class="w-full bg-[#FAF8F5]/80 border border-gray-100 hover:border-gray-250 focus:border-[#7A4D30]/40 focus:bg-white rounded-2xl py-3 px-4 text-xs md:text-sm text-gray-800 outline-none transition-all font-inter appearance-none cursor-pointer"
+                >
+                  <option value="" disabled selected>Pilih Bank</option>
+                  <option value="BCA">BCA</option>
+                  <option value="Mandiri">Mandiri</option>
+                  <option value="BIN">BIN</option>
+                  <option value="BRI">BRI</option>
+                </select>
+              </div>
+              <!-- Nomor Rekening -->
+              <div class="flex flex-col gap-1.5">
+                <label class="font-poppins text-xs font-bold text-gray-950">Nomor Rekening (Formalitas)</label>
+                <input
+                  v-model="accountNumber"
+                  type="text"
+                  placeholder="Contoh: 1234567890"
+                  class="w-full bg-[#FAF8F5]/80 border border-gray-100 hover:border-gray-250 focus:border-[#7A4D30]/40 focus:bg-white rounded-2xl py-3 px-4 text-xs md:text-sm text-gray-800 placeholder-gray-400 outline-none transition-all font-inter"
+                />
               </div>
             </div>
 
