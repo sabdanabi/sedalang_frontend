@@ -152,8 +152,10 @@ export const useSearchCraftsmanStore = defineStore('searchCraftsman', () => {
     }
 
     try {
-      const queryString = new URLSearchParams(cleanParams).toString()
-      const res = await api(`/api/v1/craftsmen?${queryString}`) as ApiResponse<{ data: ApiCraftsman[], meta: PaginationMeta }>
+      const res = await api('/api/v1/craftsmen/search', {
+        method: 'POST',
+        body: cleanParams
+      }) as ApiResponse<{ data: ApiCraftsman[], meta: PaginationMeta }>
       rawCraftsmen.value = res.data?.data || []
       if (res.data?.meta) {
         meta.value = res.data.meta
