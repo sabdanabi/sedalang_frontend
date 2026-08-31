@@ -1,0 +1,247 @@
+<script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import * as maplibregl from 'maplibre-gl'
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+import 'maplibre-gl/dist/maplibre-gl.css'
+
+// Set the Maplibre worker URL
+maplibregl.setWorkerUrl(workerUrl)
+
+const props = withDefaults(
+  defineProps<{
+    location?: string
+    latitude?: number | null
+    longitude?: number | null
+    isOwnProfile?: boolean
+  }>(),
+  {
+    isOwnProfile: true
+  }
+)
+
+const mapContainer = ref<HTMLElement | null>(null)
+let mapInstance: maplibregl.Map | null = null
+let craftsmanMarker: maplibregl.Marker | null = null
+let userMarker: maplibregl.Marker | null = null
+
+const isComparing = ref(false)
+
+const craftsmanCoords = ref<[number, number]>([
+  props.longitude != null ? Number(props.longitude) : 110.4208,
+  props.latitude != null ? Number(props.latitude) : -6.9806
+])
+
+const cleanupRouteAndUser = () => {
+  if (userMarker) {
+    userMarker.remove()
+    userMarker = null
+  }
+  if (mapInstance) {
+    if (mapInstance.getLayer('route')) {
+      mapInstance.removeLayer('route')
+    }
+    if (mapInstance.getSource('route')) {
+      mapInstance.removeSource('route')
+    }
+  }
+}
+
+const updateCoordsFromProp = () => {
+  if (props.latitude != null && props.longitude != null) {
+    const coords: [number, number] = [Number(props.longitude), Number(props.latitude)]
+    craftsmanCoords.value = coords
+    cleanupRouteAndUser()
+    if (mapInstance && craftsmanMarker) {
+      mapInstance.flyTo({
+        center: coords,
+        zoom: 14,
+        essential: true
+      })
+      craftsmanMarker.setLngLat(coords)
+    }
+  }
+}
+
+watch([() => props.location, () => props.latitude, () => props.longitude], () => {
+  updateCoordsFromProp()
+}, { immediate: true })
+
+onMounted(() => {
+  if (mapContainer.value) {
+    mapInstance = new maplibregl.Map({
+      container: mapContainer.value,
+      style: {
+        version: 8,
+        sources: {
+          'osm': {
+            type: 'raster',
+            tiles: [
+              'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+            ],
+            tileSize: 256,
+            attribution: '&copy; OpenStreetMap contributors'
+          }
+        },
+        layers: [
+          {
+            id: 'osm-layer',
+            type: 'raster',
+            source: 'osm',
+            minzoom: 0,
+            maxzoom: 19
+          }
+        ]
+      },
+      center: craftsmanCoords.value,
+      zoom: 14
+    })
+
+    // Add navigation controls
+    mapInstance.addControl(new maplibregl.NavigationControl(), 'top-right')
+
+    // Add marker representation for craftsman
+    craftsmanMarker = new maplibregl.Marker({ color: '#7A4D30' })
+      .setLngLat(craftsmanCoords.value)
+      .addTo(mapInstance)
+  }
+})
+
+onBeforeUnmount(() => {
+  cleanupRouteAndUser()
+  if (mapInstance) {
+    mapInstance.remove()
+  }
+})
+
+// Geolocation fetch coordinates and draw routing
+const handleCompareLocation = () => {
+  if (!navigator.geolocation) {
+    alert('Geolocation tidak didukung oleh browser Anda.')
+    return
+  }
+
+  isComparing.value = true
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      try {
+        const { longitude: userLng, latitude: userLat } = position.coords
+        const [craftsmanLng, craftsmanLat] = craftsmanCoords.value
+
+        if (!mapInstance) return
+
+        // Clean up previous user marker and route layers
+        cleanupRouteAndUser()
+
+        // Add a blue marker representing the user
+        userMarker = new maplibregl.Marker({ color: '#3b82f6' })
+          .setLngLat([userLng, userLat])
+          .addTo(mapInstance)
+
+        // Fit map bounds to show both user and craftsman markers
+        const bounds = new maplibregl.LngLatBounds()
+        bounds.extend([userLng, userLat])
+        bounds.extend([craftsmanLng, craftsmanLat])
+        mapInstance.fitBounds(bounds, { padding: 60 })
+
+        // Fetch actual road routing geometry from OSRM
+        let routeGeometry: any = {
+          type: 'LineString',
+          coordinates: [
+            [userLng, userLat],
+            [craftsmanLng, craftsmanLat]
+          ]
+        }
+
+        try {
+          const response = await fetch(
+            `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${craftsmanLng},${craftsmanLat}?overview=full&geometries=geojson`
+          )
+          const data = await response.json()
+          if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+            routeGeometry = data.routes[0].geometry
+          }
+        } catch (err) {
+          console.warn('Failed to fetch OSRM routing, falling back to direct line:', err)
+        }
+
+        // Add routing GeoJSON source and line layer
+        mapInstance.addSource('route', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: {},
+            geometry: routeGeometry
+          }
+        })
+
+        mapInstance.addLayer({
+          id: 'route',
+          type: 'line',
+          source: 'route',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          paint: {
+            'line-color': '#ef4444',
+            'line-width': 5,
+            'line-opacity': 0.8
+          }
+        })
+      } catch (err) {
+        console.error(err)
+      } finally {
+        isComparing.value = false
+      }
+    },
+    (error) => {
+      console.error('Failed to get location', error)
+      alert('Gagal mengambil lokasi Anda. Pastikan izin lokasi diaktifkan.')
+      isComparing.value = false
+    }
+  )
+}
+</script>
+
+<template>
+  <div class="space-y-6 text-left">
+    
+    <!-- Header row map controls -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h3 class="font-poppins text-lg md:text-xl font-bold text-gray-950">
+          Lokasi Pengrajin
+        </h3>
+        <p class="font-inter text-xs md:text-sm text-gray-500 mt-1">
+          Lihat lebih jelas dan dekat untuk lokasi pengrajin dengan anda
+        </p>
+      </div>
+
+      <!-- Compare Location Trigger -->
+      <button
+        v-if="!isOwnProfile"
+        type="button"
+        @click="handleCompareLocation"
+        :disabled="isComparing"
+        class="border border-[#7A4D30] text-[#7A4D30] hover:bg-[#7A4D30]/5 py-2.5 px-6 rounded-full text-xs font-bold font-inter transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer focus:outline-none flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <svg v-if="isComparing" class="animate-spin h-4 w-4 text-[#7A4D30]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-[#7A4D30]">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+        </svg>
+        {{ isComparing ? 'Mencari Rute...' : 'Bandingkan Lokasi Saya' }}
+      </button>
+    </div>
+
+    <!-- Map Canvas Container -->
+    <div class="w-full h-80 md:h-[400px] rounded-[32px] overflow-hidden border border-gray-150 relative shadow-sm z-10">
+      <div ref="mapContainer" class="w-full h-full"></div>
+    </div>
+
+  </div>
+</template>
