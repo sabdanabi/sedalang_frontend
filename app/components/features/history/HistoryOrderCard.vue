@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { Order } from '~/stores/orders'
 import { getAvatarUrl } from '~/composables/useAvatar'
+import { useAuthStore } from '~/stores/auth'
 
 const props = defineProps<{
   order: Order
@@ -11,6 +12,9 @@ defineEmits<{
   (e: 'select-detail', order: Order): void
   (e: 'reorder', order: Order): void
 }>()
+
+const authStore = useAuthStore()
+const isCraftsman = computed(() => authStore.user?.role === 'CRAFTSMAN')
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -173,6 +177,7 @@ const statusConfig = computed(() => {
 
         <!-- Pesan Lagi Button -->
         <button
+          v-if="!isCraftsman"
           type="button"
           @click="$emit('reorder', order)"
           class="w-full bg-[#7A4D30] hover:bg-[#683E25] text-white py-1.5 rounded-full text-[11px] font-bold font-inter shadow-sm hover:shadow transition-all duration-350 flex items-center justify-center gap-1 cursor-pointer focus:outline-none"
