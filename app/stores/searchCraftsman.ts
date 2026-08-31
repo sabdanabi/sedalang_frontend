@@ -152,20 +152,8 @@ export const useSearchCraftsmanStore = defineStore('searchCraftsman', () => {
     }
 
     try {
-      let res;
-      // If any specific search filter is provided, use the POST search API
-      if (cleanParams.search || cleanParams.skill || cleanParams.location || cleanParams.minRating) {
-        res = await api('/api/v1/craftsmen/search', {
-          method: 'POST',
-          body: cleanParams
-        }) as ApiResponse<{ data: ApiCraftsman[], meta: PaginationMeta }>
-      } else {
-        // Otherwise, use the standard GET API to load the default list
-        const queryString = new URLSearchParams(cleanParams).toString()
-        res = await api(`/api/v1/craftsmen?${queryString}`, {
-          method: 'GET'
-        }) as ApiResponse<{ data: ApiCraftsman[], meta: PaginationMeta }>
-      }
+      const queryString = new URLSearchParams(cleanParams).toString()
+      const res = await api(`/api/v1/craftsmen?${queryString}`) as ApiResponse<{ data: ApiCraftsman[], meta: PaginationMeta }>
       rawCraftsmen.value = res.data?.data || []
       if (res.data?.meta) {
         meta.value = res.data.meta
