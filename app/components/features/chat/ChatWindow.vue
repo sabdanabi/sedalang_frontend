@@ -99,6 +99,26 @@ const getPartnerAvatar = () => {
   return getAvatarUrl(partnerInfo.value?.avatar || null, partnerInfo.value?.name || 'Pengguna')
 }
 
+// AI Idea Message Helpers
+const isIdeaMessage = (content: string) => {
+  return typeof content === 'string' && content.startsWith('[AI_IDEA]')
+}
+
+const getIdeaImage = (content: string) => {
+  const match = content.match(/Image:\s*([^\n]+)/)
+  return match ? match[1].trim() : ''
+}
+
+const getIdeaTitle = (content: string) => {
+  const match = content.match(/Title:\s*([^\n]+)/)
+  return match ? match[1].trim() : ''
+}
+
+const getIdeaBody = (content: string) => {
+  const parts = content.split('---')
+  return parts.length > 1 ? parts.slice(1).join('---').trim() : content
+}
+
 const getPartnerSubtitle = () => {
   return partnerInfo.value?.subtitle || ''
 }
@@ -294,16 +314,33 @@ const handlePartnerProfileClick = () => {
           <!-- Bubble wrapper -->
           <div class="max-w-[70%] flex flex-col" :class="[isOutgoing(item) ? 'items-end' : 'items-start']">
             <!-- Text Message Bubble -->
-            <div 
+            <div
               v-if="item.type === 'message'"
               class="rounded-3xl p-4 text-sm font-inter leading-relaxed shadow-sm text-left animate-fade-in"
               :class="[
-                isOutgoing(item) 
-                  ? 'bg-[#7A4D30] text-white rounded-tr-none' 
+                isOutgoing(item)
+                  ? 'bg-[#7A4D30] text-white rounded-tr-none'
                   : 'bg-[#FAF8F5] text-gray-800 rounded-tl-none border border-gray-100/50'
               ]"
             >
-              <p class="whitespace-pre-wrap">{{ item.data.content }}</p>
+              <div v-if="isIdeaMessage(item.data.content)" class="space-y-3 max-w-sm">
+                <!-- Render image first if it exists in metadata -->
+                <img
+                  v-if="getIdeaImage(item.data.content)"
+                  :src="getIdeaImage(item.data.content)"
+                  class="w-full h-44 object-cover rounded-2xl mb-2 border border-gray-200/20"
+                  alt="AI Idea Reference"
+                />
+                <h4 class="font-poppins font-bold text-base leading-snug">
+                  {{ getIdeaTitle(item.data.content) }}
+                </h4>
+                <div class="border-t border-gray-200/20 my-2 pt-2">
+                  <p class="whitespace-pre-wrap opacity-95 text-xs md:text-sm">
+                    {{ getIdeaBody(item.data.content) }}
+                  </p>
+                </div>
+              </div>
+              <p v-else class="whitespace-pre-wrap">{{ item.data.content }}</p>
             </div>
 
             <!-- Digital Proposal Card Bubble (clickable to open view modal) -->

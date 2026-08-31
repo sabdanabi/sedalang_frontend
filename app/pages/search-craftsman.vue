@@ -84,9 +84,9 @@ const handleSelectCraftsman = async (craftsmanId: string, craftsmanName: string)
 
   let chatUrl = `/chat?craftsmanId=${craftsmanId}&craftsmanName=${encodeURIComponent(craftsmanName)}`
   if (finalIdeaId) {
-    chatUrl += `&ideaId=${finalIdeaId}`
+    chatUrl += `&ideaId=${finalIdeaId}&sendIdea=true`
   }
-  
+
   navigateTo(chatUrl)
 }
 

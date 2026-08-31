@@ -63,6 +63,9 @@ export interface Proposal {
   deliveryMethod: 'GOSEND' | 'DROP_OFF'
   estimatedCompletionDate: string
   paymentMethod: string
+  bankName?: string | null
+  bankAccountNumber?: string | null
+  bankAccountName?: string | null
   status: 'PENDING' | 'ACCEPTED' | 'REJECTED'
   createdAt: string
   updatedAt: string
@@ -75,6 +78,9 @@ export interface CreateProposalPayload {
   deliveryMethod: 'GOSEND' | 'DROP_OFF'
   estimatedCompletionDate: string
   paymentMethod: string
+  bankName?: string | null
+  bankAccountNumber?: string | null
+  bankAccountName?: string | null
 }
 
 export interface AcceptProposalResponse {

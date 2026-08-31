@@ -171,6 +171,9 @@ const handleUseIdea = () => {
   showModal.value = false
   selectedProduct.value = null
   if (ideaId) {
+    if (import.meta.client) {
+      localStorage.setItem('sedalang_active_idea_id', String(ideaId))
+    }
     navigateTo(`/select-craftsman?ideaId=${ideaId}`)
   } else {
     navigateTo('/select-craftsman')

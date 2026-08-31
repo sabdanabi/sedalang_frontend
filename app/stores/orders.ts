@@ -53,10 +53,17 @@ export interface Order {
   paidAt: string | null
   createdAt: string
   updatedAt: string
+  productName?: string
+  price?: number
+  materialsNeeded?: string[]
+  deliveryMethod?: string
+  estimatedCompletionDate?: string
   proposal: OrderProposal
   craftsman: OrderCraftsman
   user: OrderUser
+  progresses?: OrderProgressStep[]
   progressSteps?: OrderProgressStep[]
+  progressImages?: string[]
 }
 
 interface ApiResponse<T = unknown> {
@@ -81,8 +88,16 @@ export const useOrdersStore = defineStore('orders', () => {
     isLoading.value = true
     error.value = ''
     try {
-      const res = await api('/api/v1/orders') as ApiResponse<Order[]>
-      orders.value = res.data || []
+      const res = await api('/api/v1/orders') as ApiResponse<any[]>
+      const mappedOrders = (res.data || []).map((o: any) => {
+        if (o.progresses) {
+          // Sort progresses by createdAt ascending so the newest progresses are at the end (or as added)
+          // Actually let's keep the order returned by API or handle it appropriately
+          o.progressSteps = o.progresses
+        }
+        return o as Order
+      })
+      orders.value = mappedOrders
     } catch (err: any) {
       error.value = err.data?.message || err.message || 'Gagal memuat riwayat pesanan.'
       orders.value = []
@@ -96,9 +111,13 @@ export const useOrdersStore = defineStore('orders', () => {
     isDetailLoading.value = true
     error.value = ''
     try {
-      const res = await api(`/api/v1/orders/${orderId}`) as ApiResponse<Order>
-      activeOrder.value = res.data
-      return res.data
+      const res = await api(`/api/v1/orders/${orderId}`) as ApiResponse<any>
+      const orderData = res.data
+      if (orderData && orderData.progresses) {
+        orderData.progressSteps = orderData.progresses
+      }
+      activeOrder.value = orderData as Order
+      return orderData as Order
     } catch (err: any) {
       error.value = err.data?.message || err.message || 'Gagal memuat detail pesanan.'
       activeOrder.value = null
@@ -113,10 +132,10 @@ export const useOrdersStore = defineStore('orders', () => {
     const config = useRuntimeConfig()
     const tokenCookie = useCookie<string | null>('sedalang_token')
     const baseURL = config.public.apiBase as string
-    
+
     const formData = new FormData()
     formData.append('images', imageFile) // Using standard 'images' multipart key
-    
+
     isLoading.value = true
     error.value = ''
     try {
@@ -139,6 +158,74 @@ export const useOrdersStore = defineStore('orders', () => {
     }
   }
 
+  // POST /api/v1/orders/{orderId}/progress
+  const addOrderProgress = async (orderId: string, title: string, description: string, status?: string): Promise<Order> => {
+    isDetailLoading.value = true
+    error.value = ''
+    try {
+      const res = await api(`/api/v1/orders/${orderId}/progress`, {
+        method: 'POST',
+        body: {
+          title,
+          description,
+          status: status || undefined
+        }
+      }) as ApiResponse<any>
+      const orderData = res.data
+      if (orderData && orderData.progresses) {
+        orderData.progressSteps = orderData.progresses
+      }
+      activeOrder.value = orderData as Order
+      return orderData as Order
+    } catch (err: any) {
+      error.value = err.data?.message || err.message || 'Gagal menambahkan progres pesanan.'
+      throw err
+    } finally {
+      isDetailLoading.value = false
+    }
+  }
+
+  // POST /api/v1/orders/{orderId}/check-payment
+  const checkOrderPayment = async (orderId: string): Promise<any> => {
+    isDetailLoading.value = true
+    error.value = ''
+    try {
+      const res = await api(`/api/v1/orders/${orderId}/check-payment`, {
+        method: 'POST'
+      }) as ApiResponse<any>
+      if (res.data) {
+        const orderData = res.data
+        if (orderData.progresses) {
+          orderData.progressSteps = orderData.progresses
+        }
+        activeOrder.value = orderData as Order
+      }
+      return res.data
+    } catch (err: any) {
+      error.value = err.data?.message || err.message || 'Gagal menyinkronkan status pembayaran.'
+      throw err
+    } finally {
+      isDetailLoading.value = false
+    }
+  }
+
+  // POST /api/v1/orders/retry/{proposalId}
+  const retryOrderPayment = async (proposalId: string): Promise<any> => {
+    isLoading.value = true
+    error.value = ''
+    try {
+      const res = await api(`/api/v1/orders/retry/${proposalId}`, {
+        method: 'POST'
+      }) as ApiResponse<any>
+      return res.data
+    } catch (err: any) {
+      error.value = err.data?.message || err.message || 'Gagal membuat ulang pembayaran.'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   return {
     orders,
     activeOrder,
@@ -147,6 +234,9 @@ export const useOrdersStore = defineStore('orders', () => {
     error,
     fetchOrders,
     fetchOrderById,
-    uploadOrderMedia
+    uploadOrderMedia,
+    addOrderProgress,
+    checkOrderPayment,
+    retryOrderPayment
   }
 })

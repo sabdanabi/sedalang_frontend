@@ -19,6 +19,7 @@ const paymentMethod = ref('')
 const deliveryMethod = ref('')
 const selectedBank = ref('')
 const accountNumber = ref('')
+const bankAccountName = ref('')
 const isSubmitting = ref(false)
 
 const resetForm = () => {
@@ -30,6 +31,7 @@ const resetForm = () => {
   deliveryMethod.value = ''
   selectedBank.value = ''
   accountNumber.value = ''
+  bankAccountName.value = ''
   isSubmitting.value = false
 }
 
@@ -45,6 +47,13 @@ const handleFormSubmit = () => {
     return
   }
 
+  if (paymentMethod.value !== 'COD' && paymentMethod.value !== '') {
+    if (!selectedBank.value || !accountNumber.value.trim() || !bankAccountName.value.trim()) {
+      alert('Silakan lengkapi informasi pilihan bank/e-wallet, nomor rekening/e-wallet, dan nama pemilik.')
+      return
+    }
+  }
+
   // Keep isSubmitting = true until parent closes the modal (watch above will reset)
   isSubmitting.value = true
 
@@ -54,7 +63,10 @@ const handleFormSubmit = () => {
     price: price.value,
     estimatedCompletionDate: estimatedCompletionDate.value,
     paymentMethod: paymentMethod.value,
-    deliveryMethod: deliveryMethod.value
+    deliveryMethod: deliveryMethod.value,
+    bankName: paymentMethod.value === 'COD' ? null : selectedBank.value,
+    bankAccountNumber: paymentMethod.value === 'COD' ? null : accountNumber.value.trim(),
+    bankAccountName: paymentMethod.value === 'COD' ? null : bankAccountName.value.trim()
   })
 }
 </script>
@@ -176,7 +188,7 @@ const handleFormSubmit = () => {
                       <option value="" disabled selected>Pilih metode</option>
                       <option value="Transfer Bank">Transfer Bank</option>
                       <option value="COD">Cash On Delivery (COD)</option>
-                      <option value="Sirkula Pay">Sirkula Pay</option>
+                      <option value="E-Wallet">E-Wallet</option>
                     </select>
                     <div class="absolute right-4 pointer-events-none text-gray-500">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
@@ -208,28 +220,44 @@ const handleFormSubmit = () => {
               </div>
 
               <!-- Pilihan Bank & Rekening (Formalitas, visually highlighted in a clean container) -->
-              <div class="bg-[#FAF8F5]/70 border border-dashed border-[#7A4D30]/20 rounded-2xl p-4 space-y-3.5 mt-2">
+              <div
+                v-if="paymentMethod !== 'COD' && paymentMethod !== ''"
+                class="bg-[#FAF8F5]/70 border border-dashed border-[#7A4D30]/20 rounded-2xl p-4 space-y-3.5 mt-2"
+              >
                 <div class="flex items-center gap-1.5">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 text-[#7A4D30]">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
                   </svg>
-                  <span class="font-poppins text-xs font-bold text-[#7A4D30]">Informasi Rekening Pengrajin (Formalitas)</span>
+                  <span class="font-poppins text-xs font-bold text-[#7A4D30]">
+                    Informasi {{ paymentMethod === 'E-Wallet' ? 'E-Wallet' : 'Rekening Bank' }} Pengrajin
+                  </span>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
-                  <!-- Pilihan Bank -->
+                  <!-- Pilihan Bank / E-Wallet -->
                   <div class="flex flex-col gap-1.5">
-                    <label class="font-poppins text-[10px] font-bold text-gray-700">Pilihan Bank</label>
+                    <label class="font-poppins text-[10px] font-bold text-gray-700">
+                      {{ paymentMethod === 'E-Wallet' ? 'Nama E-Wallet' : 'Nama Bank' }}
+                    </label>
                     <div class="relative flex items-center">
                       <select
                         v-model="selectedBank"
                         class="w-full bg-white border border-gray-100 hover:border-gray-250 focus:border-[#7A4D30]/40 rounded-xl py-2.5 px-3 pr-8 text-xs text-gray-800 outline-none transition-all font-inter appearance-none cursor-pointer"
                       >
-                        <option value="" disabled selected>Pilih Bank</option>
-                        <option value="BCA">BCA</option>
-                        <option value="Mandiri">Mandiri</option>
-                        <option value="BIN">BIN</option>
-                        <option value="BRI">BRI</option>
+                        <option value="" disabled selected>Pilih Provider</option>
+                        <template v-if="paymentMethod === 'E-Wallet'">
+                          <option value="DANA">DANA</option>
+                          <option value="GOPAY">GoPay</option>
+                          <option value="OVO">OVO</option>
+                          <option value="SHOPEEPAY">ShopeePay</option>
+                          <option value="LINKAJA">LinkAja</option>
+                        </template>
+                        <template v-else>
+                          <option value="BCA">BCA</option>
+                          <option value="MANDIRI">Mandiri</option>
+                          <option value="BRI">BRI</option>
+                          <option value="BNI">BNI</option>
+                        </template>
                       </select>
                       <div class="absolute right-3 pointer-events-none text-gray-400">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3 h-3">
@@ -238,16 +266,29 @@ const handleFormSubmit = () => {
                       </div>
                     </div>
                   </div>
-                  <!-- Nomor Rekening -->
+                  <!-- Nomor Rekening / No E-Wallet -->
                   <div class="flex flex-col gap-1.5">
-                    <label class="font-poppins text-[10px] font-bold text-gray-700">Nomor Rekening</label>
+                    <label class="font-poppins text-[10px] font-bold text-gray-700">
+                      {{ paymentMethod === 'E-Wallet' ? 'Nomor HP E-Wallet' : 'Nomor Rekening' }}
+                    </label>
                     <input
                       v-model="accountNumber"
                       type="text"
-                      placeholder="Contoh: 1234567890"
+                      :placeholder="paymentMethod === 'E-Wallet' ? 'Contoh: 08123456789' : 'Contoh: 1234567890'"
                       class="w-full bg-white border border-gray-100 hover:border-gray-250 focus:border-[#7A4D30]/40 rounded-xl py-2.5 px-3 text-xs text-gray-800 placeholder-gray-300 outline-none transition-all font-inter"
                     />
                   </div>
+                </div>
+
+                <!-- Nama Pemilik Rekening / E-Wallet -->
+                <div class="flex flex-col gap-1.5 mt-2">
+                  <label class="font-poppins text-[10px] font-bold text-gray-700">Nama Pemilik Akun / Rekening</label>
+                  <input
+                    v-model="bankAccountName"
+                    type="text"
+                    placeholder="Contoh: Budi Santoso"
+                    class="w-full bg-white border border-gray-100 hover:border-gray-250 focus:border-[#7A4D30]/40 rounded-xl py-2.5 px-3 text-xs text-gray-800 placeholder-gray-300 outline-none transition-all font-inter"
+                  />
                 </div>
               </div>
             </div>

@@ -45,16 +45,24 @@ onMounted(async () => {
     // Auto-initiate room if query params exist
     const craftsmanId = route.query.craftsmanId as string
     const ideaId = route.query.ideaId as string
+    const sendIdea = route.query.sendIdea === 'true'
     const craftsmanParam = route.query.craftsman as string
     const craftsmanNameParam = route.query.craftsmanName as string
 
     if (craftsmanId) {
       try {
-        const existingRoom = chatStore.rooms.find(r => 
-          r.craftsmanId === craftsmanId || 
-          r.craftsman?.id === craftsmanId || 
-          r.craftsman?.userId === craftsmanId
-        )
+        const existingRoom = chatStore.rooms.find(r => {
+          const matchesCraftsman = r.craftsmanId === craftsmanId ||
+                                   r.craftsman?.id === craftsmanId ||
+                                   r.craftsman?.userId === craftsmanId
+          const roomIdeaId = r.ideaId || r.idea?.id
+          const matchesIdea = ideaId ? roomIdeaId === ideaId : !roomIdeaId
+          return matchesCraftsman && matchesIdea
+        })
+
+        let targetRoomId = ''
+        let ideaTitle = ''
+
         if (existingRoom) {
           // Move existing conversation to the top of the sidebar list
           const index = chatStore.rooms.findIndex(r => r.id === existingRoom.id)
@@ -64,14 +72,18 @@ onMounted(async () => {
           }
           chatStore.joinRoom(existingRoom.id)
           await chatStore.fetchMessages(existingRoom.id)
+          targetRoomId = existingRoom.id
+          ideaTitle = existingRoom.idea?.ideaTitle || ''
         } else {
           // Try to get or create room
           let activeIdeaId = ideaId || undefined
-          
+
           try {
             const room = await chatStore.createOrGetRoom(craftsmanId, activeIdeaId)
             chatStore.joinRoom(room.id)
             await chatStore.fetchMessages(room.id)
+            targetRoomId = room.id
+            ideaTitle = room.idea?.ideaTitle || ''
           } catch (createErr) {
             console.error('Failed to create/get chat room:', createErr)
             if (chatStore.rooms.length > 0) {
@@ -80,6 +92,72 @@ onMounted(async () => {
               await chatStore.fetchMessages(firstRoom.id)
             }
           }
+        }
+
+        // Send idea if requested
+        if (sendIdea && targetRoomId) {
+          let selectedIdea = null
+          const aiStore = useAIStore()
+
+          // Make sure history list is loaded to look up details
+          if (aiStore.historyList.length === 0) {
+            try {
+              await aiStore.getHistory()
+            } catch (err) {
+              console.error('Failed to pre-load AI history for chat:', err)
+            }
+          }
+
+          if (ideaId) {
+            for (const record of aiStore.historyList) {
+              const idea = record.ideas.find(i => i.id === ideaId)
+              if (idea) {
+                selectedIdea = idea
+                break
+              }
+            }
+          }
+
+          // Delay slightly to ensure Socket is connected and joined
+          setTimeout(() => {
+            let messageText = ''
+            if (selectedIdea) {
+              const title = selectedIdea.ideaTitle
+              const image = selectedIdea.imageUrl || ''
+              const desc = selectedIdea.description || ''
+              const materials = selectedIdea.materialsNeeded ? selectedIdea.materialsNeeded.join(', ') : ''
+              const tools = selectedIdea.toolsNeeded ? selectedIdea.toolsNeeded.join(', ') : ''
+
+              let stepsText = ''
+              if (selectedIdea.steps && selectedIdea.steps.length > 0) {
+                stepsText = '\n📋 *Langkah Pembuatan:*\n' + selectedIdea.steps.map((s, idx) => `${idx + 1}. ${s}`).join('\n')
+              }
+
+              messageText = `[AI_IDEA]
+Image: ${image}
+Title: ${title}
+---
+Halo! Saya ingin berkonsultasi mengenai ide daur ulang dari AI:
+
+💡 *${title}*
+${desc}
+
+🛠 *Alat & Bahan:*
+- Bahan: ${materials || '-'}
+- Alat: ${tools || '-'}
+${stepsText}`
+            } else {
+              messageText = `Halo! Saya tertarik dengan ide daur ulang "${ideaTitle || 'ini'}". Mari diskusikan detail pembuatannya.`
+            }
+
+            chatStore.sendMessage(targetRoomId, messageText)
+          }, 800)
+
+          // Clear sendIdea from URL to prevent duplicate sends on refresh
+          const router = useRouter()
+          const query = { ...route.query }
+          delete query.sendIdea
+          router.replace({ query })
         }
       } catch (err) {
         console.error('Failed to auto-initiate chat room:', err)
@@ -149,7 +227,10 @@ const handleProposalSubmit = async (proposalData: any) => {
         : String(proposalData.materialsNeeded).split(',').map((s: string) => s.trim()).filter(Boolean),
       deliveryMethod,
       estimatedCompletionDate,
-      paymentMethod: proposalData.paymentMethod || 'Transfer Bank'
+      paymentMethod: proposalData.paymentMethod || 'Transfer Bank',
+      bankName: proposalData.bankName || null,
+      bankAccountNumber: proposalData.bankAccountNumber || null,
+      bankAccountName: proposalData.bankAccountName || null
     })
 
     // Refresh proposals for the active room — endpoint may not exist,
