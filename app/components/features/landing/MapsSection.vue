@@ -28,46 +28,25 @@ onMounted(() => {
   map.on('load', () => {
     if (!map) return
 
-    // Route coordinates connecting various artisan hubs in Semarang
-    const routeCoordinates = [
-      [110.4003, -6.9832], // Semarang Barat
-      [110.4153, -6.9872], // Semarang Tengah
-      [110.4203, -6.9932], // Simpang Lima
-      [110.4353, -7.0002], // Gayamsari
-      [110.4123, -7.0132], // Gajahmungkur
-      [110.4283, -7.0222]  // Candisari
+    // 13 Artisan locations in Semarang (original 6 + 7 new ones)
+    const locations = [
+      { coords: [110.4003, -6.9832], name: 'Pengrajin Bambu Krobokan' },
+      { coords: [110.4153, -6.9872], name: 'Sirkula Woodcraft Tengah' },
+      { coords: [110.4203, -6.9932], name: 'Limbah Kreatif Simpang Lima' },
+      { coords: [110.4353, -7.0002], name: 'Galeri Daur Ulang Gayamsari' },
+      { coords: [110.4123, -7.0132], name: 'Kerajinan Kertas Gajahmungkur' },
+      { coords: [110.4283, -7.0222], name: 'Daur Ulang Tekstil Candisari' },
+      { coords: [110.4412, -7.0482], name: 'Workshop Ecobrick Tembalang' },
+      { coords: [110.4253, -7.0592], name: 'Kerajinan Ban Bekas Banyumanik' },
+      { coords: [110.4632, -7.0052], name: 'Kreasi Logam Pedurungan' },
+      { coords: [110.4721, -6.9692], name: 'Daur Ulang Plastik Genuk' },
+      { coords: [110.3543, -6.9972], name: 'Galeri Kaca Ngaliyan' },
+      { coords: [110.3782, -7.0542], name: 'Pengrajin Serabut Kelapa Gunungpati' },
+      { coords: [110.4278, -6.9681], name: 'Kolektif Seni Sampah Kota Lama' }
     ]
 
-    // 1. Add Route Path Source and Line Layer
-    map.addSource('artisan-route', {
-      type: 'geojson',
-      data: {
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'LineString',
-          coordinates: routeCoordinates
-        }
-      }
-    })
-
-    map.addLayer({
-      id: 'route-path-line',
-      type: 'line',
-      source: 'artisan-route',
-      layout: {
-        'line-join': 'round',
-        'line-cap': 'round'
-      },
-      paint: {
-        'line-color': '#7A4D30',
-        'line-width': 4,
-        'line-opacity': 0.8
-      }
-    })
-
-    // 2. Add Custom Numbered Markers
-    routeCoordinates.forEach((coord, idx) => {
+    // Add Custom Numbered Markers for each location
+    locations.forEach((loc, idx) => {
       const el = document.createElement('div')
       el.className = 'custom-map-marker font-inter'
       el.style.width = '32px'
@@ -83,26 +62,17 @@ onMounted(() => {
       el.style.alignItems = 'center'
       el.style.justifyContent = 'center'
       el.style.cursor = 'pointer'
-      el.innerText = `0${idx + 1}`
-
-      const artisanNames = [
-        'Artisan Bambu Krobokan',
-        'Sirkula Woodcraft Tengah',
-        'Limbah Kreatif Simpang Lima',
-        'Galeri Daur Ulang Gayamsari',
-        'Kerajinan Kertas Gajahmungkur',
-        'Daur Ulang Tekstil Candisari'
-      ]
+      el.innerText = String(idx + 1).padStart(2, '0')
 
       const popup = new maplibregl.Popup({ offset: 12 }).setHTML(
         `<div class="p-2 font-inter text-xs text-gray-800">
-           <h4 class="font-bold font-poppins text-gray-900">${artisanNames[idx]}</h4>
-           <p class="text-gray-500 mt-1">MSME Partner in Semarang</p>
+           <h4 class="font-bold font-poppins text-gray-900">${loc.name}</h4>
+           <p class="text-gray-500 mt-1">Mitra Pengrajin SeDaLang</p>
          </div>`
       )
 
       new maplibregl.Marker(el)
-        .setLngLat(coord as [number, number])
+        .setLngLat(loc.coords as [number, number])
         .setPopup(popup)
         .addTo(map!)
     })
