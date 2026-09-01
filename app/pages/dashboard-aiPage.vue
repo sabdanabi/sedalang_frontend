@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useAIStore } from '~/stores/ai'
 import { useAuthStore } from '~/stores/auth'
 
@@ -16,6 +16,33 @@ const userName = computed(() => {
 })
 
 const isAnalyzing = ref(false)
+
+// AI loading cycling messages
+const AI_LOADING_MESSAGES = [
+  'AI menganalis perintah...', 
+  'Sedang memuat gambar...',
+  'Sedang merancang ide yang sesuai...',
+  'Sedang menyusun rekomendasi...',
+  'Hampir selesai...',
+]
+const aiMsgIndex = ref(0)
+let aiMsgInterval: ReturnType<typeof setInterval> | null = null
+
+watch(isAnalyzing, (val) => {
+  if (val) {
+    aiMsgIndex.value = 0
+    aiMsgInterval = setInterval(() => {
+      aiMsgIndex.value = (aiMsgIndex.value + 1) % AI_LOADING_MESSAGES.length
+    }, 2000)
+  } else {
+    if (aiMsgInterval) clearInterval(aiMsgInterval)
+    aiMsgInterval = null
+  }
+})
+
+onBeforeUnmount(() => {
+  if (aiMsgInterval) clearInterval(aiMsgInterval)
+})
 const detectedMaterial = ref('')
 const showModal = ref(false)
 const selectedProduct = ref<Product | null>(null)
@@ -265,7 +292,11 @@ const handleUseIdea = () => {
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
               </svg>
-              AI sedang menganalisis...
+              <Transition name="ai-msg" mode="out-in">
+                <span :key="aiMsgIndex" class="font-semibold text-sm text-[#7A4D30]">
+                  {{ AI_LOADING_MESSAGES[aiMsgIndex] }}
+                </span>
+              </Transition>
             </div>
           </div>
         </section>
@@ -292,3 +323,18 @@ const handleUseIdea = () => {
     />
   </div>
 </template>
+
+<style scoped>
+.ai-msg-enter-active,
+.ai-msg-leave-active {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.ai-msg-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.ai-msg-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+</style>
