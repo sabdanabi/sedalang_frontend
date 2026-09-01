@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue'
 import { useAuthStore } from '~/stores/auth'
+import * as maplibregl from 'maplibre-gl'
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+import 'maplibre-gl/dist/maplibre-gl.css'
+
+maplibregl.setWorkerUrl(workerUrl)
 
 definePageMeta({
   layout: false
@@ -13,6 +18,46 @@ const selectedRole = ref<'pengguna' | 'pengrajin'>('pengrajin')
 const isLoading = ref(false)
 const isLoadingLocation = ref(false)
 const errorMsg = ref('')
+
+// Map refs
+const mapContainer = ref<HTMLElement | null>(null)
+let mapInstance: maplibregl.Map | null = null
+let locationMarker: maplibregl.Marker | null = null
+
+const hasLocation = computed(() => profileForm.value.latitude != null && profileForm.value.longitude != null)
+
+const initOrUpdateMap = (lat: number, lng: number) => {
+  const coords: [number, number] = [lng, lat]
+  if (mapInstance && locationMarker) {
+    mapInstance.flyTo({ center: coords, zoom: 14, essential: true })
+    locationMarker.setLngLat(coords)
+  } else if (mapContainer.value) {
+    mapInstance = new maplibregl.Map({
+      container: mapContainer.value,
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '&copy; OpenStreetMap contributors'
+          }
+        },
+        layers: [{ id: 'osm-layer', type: 'raster', source: 'osm', minzoom: 0, maxzoom: 19 }]
+      },
+      center: coords,
+      zoom: 14
+    })
+    mapInstance.addControl(new maplibregl.NavigationControl(), 'top-right')
+    locationMarker = new maplibregl.Marker({ color: '#7A4D30' }).setLngLat(coords).addTo(mapInstance)
+  }
+}
+
+onBeforeUnmount(() => {
+  if (locationMarker) locationMarker.remove()
+  if (mapInstance) mapInstance.remove()
+})
 
 const profileForm = ref({
   fullName: '',
@@ -76,7 +121,7 @@ const handleGetMyLocation = () => {
           const city = address.city || address.town || address.municipality || address.county || ''
           const road = address.road || ''
           const neighborhood = address.neighbourhood || address.suburb || ''
-          
+
           const formattedParts = [road, neighborhood, city].filter(Boolean)
           profileForm.value.location = formattedParts.join(', ') || data.display_name
         } else {
@@ -87,6 +132,8 @@ const handleGetMyLocation = () => {
         profileForm.value.location = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
       } finally {
         isLoadingLocation.value = false
+        await nextTick()
+        initOrUpdateMap(latitude, longitude)
       }
     },
     (error) => {
@@ -408,6 +455,13 @@ const goBack = () => {
               </button>
             </div>
           </form>
+
+          <!-- Map Preview setelah lokasi didapat -->
+          <Transition name="fade">
+            <div v-if="hasLocation" class="w-full h-48 rounded-[24px] overflow-hidden border border-gray-150 shadow-sm mt-2 relative z-10">
+              <div ref="mapContainer" class="w-full h-full"></div>
+            </div>
+          </Transition>
         </div>
       </div>
 
@@ -454,3 +508,14 @@ const goBack = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.35s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
